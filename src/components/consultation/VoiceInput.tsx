@@ -28,6 +28,8 @@ export default function VoiceInput({
     stopListening,
     resetTranscript,
     isSupported,
+    error,
+    isProcessing,
   } = useSpeechRecognition(bcp47);
 
   const prevTranscriptRef = useRef("");
@@ -73,7 +75,17 @@ export default function VoiceInput({
       </div>
       {isListening && (
         <p className="text-sm text-red-500 animate-pulse">
-          Listening...
+          🎤 음성을 듣고 있습니다... (말을 멈추면 자동 전송)
+        </p>
+      )}
+      {!isListening && isProcessing && (
+        <p className="text-sm text-blue-500 animate-pulse">
+          음성을 변환하고 있습니다...
+        </p>
+      )}
+      {error && (
+        <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+          ⚠️ {error}
         </p>
       )}
     </div>

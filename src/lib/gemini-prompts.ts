@@ -39,6 +39,16 @@ Return ONLY a JSON array of exactly 5 question strings in ${targetLang}. No othe
 Example format: ["question1", "question2", "question3", "question4", "question5"]`;
 }
 
+export const STT_SYSTEM = `You are a medical speech-to-text transcription specialist at a Korean hospital.
+Transcribe the audio accurately, paying special attention to medical terminology.
+Return ONLY the transcribed text without any explanations, notes, or formatting.
+If the audio is unclear or silent, return an empty string.`;
+
+export function buildSTTPrompt(lang: string): string {
+  return `Transcribe the following audio in ${lang}.
+Focus on medical terminology accuracy. Return ONLY the transcribed text.`;
+}
+
 export function buildMedicalTranslatePrompt(
   text: string,
   direction: "toKorean" | "fromKorean",

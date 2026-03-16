@@ -85,37 +85,61 @@ export default function InterpretationChat({
     [language.geminiLangName, language.bcp47, addChatMessage, doctorTTS, patientTTS]
   );
 
+  // Track which side just stopped to send transcript after Gemini processing
+  const pendingSideRef = useRef<"doctor" | "patient" | null>(null);
+
+  // When transcript updates after stopping, send for translation
+  useEffect(() => {
+    if (
+      pendingSideRef.current === "doctor" &&
+      !doctorSTT.isListening &&
+      !doctorSTT.isProcessing &&
+      doctorSTT.transcript
+    ) {
+      translateAndAdd(doctorSTT.transcript, "doctor");
+      doctorSTT.resetTranscript();
+      pendingSideRef.current = null;
+    }
+  }, [doctorSTT.transcript, doctorSTT.isListening, doctorSTT.isProcessing, translateAndAdd, doctorSTT]);
+
+  useEffect(() => {
+    if (
+      pendingSideRef.current === "patient" &&
+      !patientSTT.isListening &&
+      !patientSTT.isProcessing &&
+      patientSTT.transcript
+    ) {
+      translateAndAdd(patientSTT.transcript, "patient");
+      patientSTT.resetTranscript();
+      pendingSideRef.current = null;
+    }
+  }, [patientSTT.transcript, patientSTT.isListening, patientSTT.isProcessing, translateAndAdd, patientSTT]);
+
   const handleDoctorMic = useCallback(() => {
     if (activeSide === "doctor") {
       doctorSTT.stopListening();
       setActiveSide(null);
-      if (doctorSTT.transcript) {
-        translateAndAdd(doctorSTT.transcript, "doctor");
-        doctorSTT.resetTranscript();
-      }
+      pendingSideRef.current = "doctor";
     } else {
       patientSTT.stopListening();
       doctorSTT.resetTranscript();
       doctorSTT.startListening();
       setActiveSide("doctor");
     }
-  }, [activeSide, doctorSTT, patientSTT, translateAndAdd]);
+  }, [activeSide, doctorSTT, patientSTT]);
 
   const handlePatientMic = useCallback(() => {
     if (activeSide === "patient") {
       patientSTT.stopListening();
       setActiveSide(null);
-      if (patientSTT.transcript) {
-        translateAndAdd(patientSTT.transcript, "patient");
-        patientSTT.resetTranscript();
-      }
+      pendingSideRef.current = "patient";
     } else {
       doctorSTT.stopListening();
       patientSTT.resetTranscript();
       patientSTT.startListening();
       setActiveSide("patient");
     }
-  }, [activeSide, doctorSTT, patientSTT, translateAndAdd]);
+  }, [activeSide, doctorSTT, patientSTT]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)]">
@@ -217,7 +241,7 @@ export default function InterpretationChat({
             }`}
           >
             <div className="max-w-[80%] rounded-2xl p-4 bg-yellow-50 border border-yellow-200">
-              <p className="text-xs text-yellow-600 mb-1">Listening...</p>
+              <p className="text-xs text-yellow-600 mb-1">🎤 음성을 듣고 있습니다...</p>
               <p className="text-gray-800">
                 {activeSide === "doctor"
                   ? doctorSTT.transcript
@@ -227,8 +251,21 @@ export default function InterpretationChat({
           </div>
         )}
 
+        {!activeSide && (doctorSTT.isProcessing || patientSTT.isProcessing) && (
+          <div className="text-center text-sm text-blue-500 animate-pulse">
+            음성을 변환하고 있습니다...
+          </div>
+        )}
+
         <div ref={chatEndRef} />
       </div>
+
+      {/* Error Display */}
+      {(doctorSTT.error || patientSTT.error) && (
+        <div className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg mx-4">
+          ⚠️ {doctorSTT.error || patientSTT.error}
+        </div>
+      )}
 
       {/* Mic Controls */}
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 no-print">
@@ -240,7 +277,7 @@ export default function InterpretationChat({
           <MicrophoneButton
             isListening={activeSide === "doctor"}
             onClick={handleDoctorMic}
-            disabled={translating}
+            disabled={translating || doctorSTT.isProcessing || patientSTT.isProcessing}
           />
         </div>
 
@@ -252,11 +289,8 @@ export default function InterpretationChat({
           <MicrophoneButton
             isListening={activeSide === "patient"}
             onClick={handlePatientMic}
-            disabled={translating || !language.speechSupported}
+            disabled={translating || doctorSTT.isProcessing || patientSTT.isProcessing}
           />
-          {!language.speechSupported && (
-            <p className="text-xs text-red-400">Voice not supported</p>
-          )}
         </div>
       </div>
     </div>

@@ -83,7 +83,7 @@ export const LANGUAGES: LanguageConfig[] = [
     flagEmoji: "🇲🇳",
     dir: "ltr",
     geminiLangName: "Mongolian",
-    speechSupported: false,
+    speechSupported: true,
   },
   {
     code: "tl",
@@ -119,7 +119,7 @@ export const LANGUAGES: LanguageConfig[] = [
     flagEmoji: "🇺🇿",
     dir: "ltr",
     geminiLangName: "Uzbek",
-    speechSupported: false,
+    speechSupported: true,
   },
   {
     code: "kk",
@@ -131,7 +131,7 @@ export const LANGUAGES: LanguageConfig[] = [
     flagEmoji: "🇰🇿",
     dir: "ltr",
     geminiLangName: "Kazakh",
-    speechSupported: false,
+    speechSupported: true,
   },
   {
     code: "id",

@@ -3,3 +3,8 @@ node_modules
 .env
 .env.local
 .env*.local
+tsconfig.tsbuildinfo
+*.json.bak
+
+# Firebase service account keys
+globalhospital-*-firebase-adminsdk-*.json
