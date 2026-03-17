@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useConsultationStore } from "@/hooks/useConsultationStore";
-import { MEDICAL_LABELS, FIELD_KEYS } from "@/config/medical-fields";
+import { getMedicalLabels, FIELD_KEYS } from "@/config/medical-fields";
 import { LanguageConfig } from "@/types/language";
 
 interface SummaryViewProps {
@@ -24,7 +24,7 @@ export default function SummaryView({ language }: SummaryViewProps) {
     useConsultationStore();
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
-  const labels = MEDICAL_LABELS[language.code];
+  const labels = getMedicalLabels(language.code);
 
   const handleSave = async () => {
     setSaving(true);

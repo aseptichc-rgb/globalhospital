@@ -8,3 +8,4 @@ tsconfig.tsbuildinfo
 
 # Firebase service account keys
 globalhospital-*-firebase-adminsdk-*.json
+.vercel

@@ -1,6 +1,7 @@
 import { getLanguageByCode, VALID_LANG_CODES } from "@/config/languages";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import FlagImage from "@/components/ui/FlagImage";
 
 export function generateStaticParams() {
   return VALID_LANG_CODES.map((lang) => ({ lang }));
@@ -45,7 +46,7 @@ export default async function LangLayout({
             <span className="text-sm">언어 선택</span>
           </Link>
           <div className="flex items-center gap-2">
-            <span className="text-2xl">{language.flagEmoji}</span>
+            <FlagImage countryCode={language.countryCode} alt={language.nameInEnglish} size="sm" />
             <span className="text-sm font-medium text-gray-600">
               {language.nameInNative}
             </span>

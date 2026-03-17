@@ -11,6 +11,7 @@ interface VoiceInputProps {
   bcp47: string;
   speechSupported: boolean;
   label: string;
+  dir?: "ltr" | "rtl";
 }
 
 export default function VoiceInput({
@@ -20,6 +21,7 @@ export default function VoiceInput({
   bcp47,
   speechSupported,
   label,
+  dir = "ltr",
 }: VoiceInputProps) {
   const {
     transcript,
@@ -63,6 +65,10 @@ export default function VoiceInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
+          lang={bcp47}
+          dir={dir}
+          autoComplete="off"
+          autoCorrect="off"
           rows={3}
           className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent resize-none text-gray-800 placeholder-gray-400"
         />
