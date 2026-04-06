@@ -22,7 +22,7 @@ const QUESTION_KEYS: readonly FieldKey[] = FIELD_KEYS;
 
 export default function ConsultationForm({ language }: ConsultationFormProps) {
   const router = useRouter();
-  const { updateField, setLanguage } = useConsultationStore();
+  const { updateField, setLanguage, setFollowUpQuestions } = useConsultationStore();
   const labels = getMedicalLabels(language.code);
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -197,6 +197,8 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
   };
 
   const handleComplete = () => {
+    // Clear cached follow-up questions so they regenerate based on the current chief complaint
+    setFollowUpQuestions([], []);
     router.push(`/${language.code}/followup`);
   };
 
