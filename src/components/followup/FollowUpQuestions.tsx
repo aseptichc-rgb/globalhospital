@@ -317,9 +317,9 @@ export default function FollowUpQuestions({ language }: FollowUpQuestionsProps) 
                   : "bg-primary text-white rounded-tr-md"
               }`}
             >
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+              <p className="text-xl whitespace-pre-wrap leading-relaxed">{msg.text}</p>
               {msg.koreanTranslation && (
-                <p className="text-xs mt-2 pt-2 border-t border-white/20 opacity-80">
+                <p className="text-lg mt-2 pt-2 border-t border-white/20 opacity-80 leading-relaxed">
                   🇰🇷 {msg.koreanTranslation}
                 </p>
               )}
@@ -352,12 +352,12 @@ export default function FollowUpQuestions({ language }: FollowUpQuestionsProps) 
       {(isListening || isProcessing) && (
         <div className="px-4 pb-2 shrink-0">
           {isListening && (
-            <p className="text-sm text-red-500 animate-pulse text-center">
+            <p className="text-base text-red-500 animate-pulse text-center">
               {labels.listeningMessage}
             </p>
           )}
           {!isListening && isProcessing && (
-            <p className="text-sm text-blue-500 animate-pulse text-center">
+            <p className="text-base text-blue-500 animate-pulse text-center">
               {labels.processingVoiceMessage}
             </p>
           )}
@@ -405,7 +405,7 @@ export default function FollowUpQuestions({ language }: FollowUpQuestionsProps) 
             <button
               onClick={handleSkip}
               disabled={isTranslating}
-              className="px-3 py-2.5 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-40 shrink-0"
+              className="px-4 py-3 text-base text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-40 shrink-0"
             >
               {labels.skipButton}
             </button>
@@ -421,8 +421,8 @@ export default function FollowUpQuestions({ language }: FollowUpQuestionsProps) 
               autoCorrect="off"
               dir={language.dir}
               rows={1}
-              className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent resize-none text-gray-800 placeholder-gray-400 text-sm"
-              style={{ minHeight: "42px", maxHeight: "120px" }}
+              className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent resize-none text-gray-800 placeholder-gray-400 text-lg"
+              style={{ minHeight: "48px", maxHeight: "120px" }}
             />
 
             {canUseVoice && (
@@ -436,7 +436,7 @@ export default function FollowUpQuestions({ language }: FollowUpQuestionsProps) 
             <button
               onClick={handleSend}
               disabled={!inputValue.trim() || isTranslating}
-              className="px-4 py-2.5 bg-primary text-white font-medium rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 text-sm"
+              className="px-5 py-3 bg-primary text-white font-medium rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 text-lg"
             >
               {labels.sendButton}
             </button>

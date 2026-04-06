@@ -217,11 +217,11 @@ export default function InterpretationChat({
                   : "bg-patient rounded-tr-sm"
               }`}
             >
-              <p className="text-xs font-semibold mb-1 text-gray-500">
+              <p className="text-sm font-semibold mb-1 text-gray-500">
                 {msg.speaker === "doctor" ? "Doctor 의사" : `Patient 환자`}
               </p>
-              <p className="text-gray-900 font-medium">{msg.originalText}</p>
-              <p className="text-sm text-gray-600 mt-2 pt-2 border-t border-gray-200">
+              <p className="text-xl text-gray-900 font-medium leading-relaxed">{msg.originalText}</p>
+              <p className="text-lg text-gray-600 mt-2 pt-2 border-t border-gray-200 leading-relaxed">
                 → {msg.translatedText}
               </p>
             </div>
@@ -229,7 +229,7 @@ export default function InterpretationChat({
         ))}
 
         {translating && (
-          <div className="text-center text-sm text-gray-400 animate-pulse">
+          <div className="text-center text-base text-gray-400 animate-pulse">
             Translating...
           </div>
         )}
@@ -241,8 +241,8 @@ export default function InterpretationChat({
             }`}
           >
             <div className="max-w-[80%] rounded-2xl p-4 bg-yellow-50 border border-yellow-200">
-              <p className="text-xs text-yellow-600 mb-1">🎤 음성을 듣고 있습니다...</p>
-              <p className="text-gray-800">
+              <p className="text-sm text-yellow-600 mb-1">🎤 음성을 듣고 있습니다...</p>
+              <p className="text-lg text-gray-800">
                 {activeSide === "doctor"
                   ? doctorSTT.transcript
                   : patientSTT.transcript}
@@ -252,7 +252,7 @@ export default function InterpretationChat({
         )}
 
         {!activeSide && (doctorSTT.isProcessing || patientSTT.isProcessing) && (
-          <div className="text-center text-sm text-blue-500 animate-pulse">
+          <div className="text-center text-base text-blue-500 animate-pulse">
             음성을 변환하고 있습니다...
           </div>
         )}
@@ -270,10 +270,10 @@ export default function InterpretationChat({
       {/* Mic Controls */}
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 no-print">
         <div className="flex flex-col items-center gap-2">
-          <p className="text-sm font-semibold text-blue-700">
+          <p className="text-base font-semibold text-blue-700">
             Doctor 의사
           </p>
-          <p className="text-xs text-gray-500">한국어</p>
+          <p className="text-sm text-gray-500">한국어</p>
           <MicrophoneButton
             isListening={activeSide === "doctor"}
             onClick={handleDoctorMic}
@@ -282,10 +282,10 @@ export default function InterpretationChat({
         </div>
 
         <div className="flex flex-col items-center gap-2">
-          <p className="text-sm font-semibold text-green-700">
+          <p className="text-base font-semibold text-green-700">
             Patient 환자
           </p>
-          <p className="text-xs text-gray-500">{language.nameInNative}</p>
+          <p className="text-sm text-gray-500">{language.nameInNative}</p>
           <MicrophoneButton
             isListening={activeSide === "patient"}
             onClick={handlePatientMic}
