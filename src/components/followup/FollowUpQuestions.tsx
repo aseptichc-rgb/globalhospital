@@ -23,7 +23,6 @@ export default function FollowUpQuestions({ language }: FollowUpQuestionsProps) 
   const {
     formData,
     followUpQuestions,
-    followUpChiefComplaint,
     setFollowUpQuestions,
     followUpAnswers,
     updateFollowUpAnswer,
@@ -60,8 +59,8 @@ export default function FollowUpQuestions({ language }: FollowUpQuestionsProps) 
   // Generate follow-up questions
   useEffect(() => {
     const currentComplaint = formData.chiefComplaint?.original || "";
-    // Reuse cached questions only if they match the current chief complaint
-    if (followUpQuestions.length > 0 && followUpChiefComplaint === currentComplaint) {
+    // Reuse cached questions if available
+    if (followUpQuestions.length > 0) {
       setQuestionsReady(true);
       return;
     }
@@ -103,7 +102,6 @@ export default function FollowUpQuestions({ language }: FollowUpQuestionsProps) 
     language.code,
     language.geminiLangName,
     followUpQuestions.length,
-    followUpChiefComplaint,
     setFollowUpQuestions,
     router,
   ]);

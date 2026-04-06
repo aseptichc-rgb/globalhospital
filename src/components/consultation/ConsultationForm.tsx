@@ -98,18 +98,6 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
     }
   }, [transcript]);
 
-  // Auto-send when voice recognition completes
-  const wasProcessingRef = useRef(false);
-  useEffect(() => {
-    if (isProcessing) {
-      wasProcessingRef.current = true;
-    } else if (wasProcessingRef.current && !isListening && transcript) {
-      wasProcessingRef.current = false;
-      // Use setTimeout to ensure inputValue is updated from transcript first
-      setTimeout(() => handleSend(), 0);
-    }
-  }, [isProcessing, isListening, transcript, handleSend]);
-
   // Generate follow-up questions after base questions complete
   const generateFollowUpQuestions = useCallback(async () => {
     if (followUpGeneratedRef.current) return;
@@ -322,6 +310,18 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
     advanceBaseQuestion,
     advanceFollowUpQuestion,
   ]);
+
+  // Auto-send when voice recognition completes
+  const wasProcessingRef = useRef(false);
+  useEffect(() => {
+    if (isProcessing) {
+      wasProcessingRef.current = true;
+    } else if (wasProcessingRef.current && !isListening && transcript) {
+      wasProcessingRef.current = false;
+      // Use setTimeout to ensure inputValue is updated from transcript first
+      setTimeout(() => handleSend(), 0);
+    }
+  }, [isProcessing, isListening, transcript, handleSend]);
 
   const handleSkip = useCallback(() => {
     if (isTranslating) return;
