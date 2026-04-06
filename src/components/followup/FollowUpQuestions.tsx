@@ -82,7 +82,7 @@ export default function FollowUpQuestions({ language }: FollowUpQuestionsProps) 
         });
         const data = await res.json();
         if (data.questions) {
-          setFollowUpQuestions(data.questions);
+          setFollowUpQuestions(data.questions, data.questionsKorean || []);
           setQuestionsReady(true);
         } else {
           setError("Failed to generate questions");

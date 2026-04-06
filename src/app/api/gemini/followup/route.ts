@@ -36,9 +36,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const questions: string[] = JSON.parse(jsonMatch[0]);
+    const parsed = JSON.parse(jsonMatch[0]);
+    const items = parsed.slice(0, 5);
 
-    return NextResponse.json({ questions: questions.slice(0, 5) });
+    // Support both bilingual objects and plain strings (fallback)
+    if (items.length > 0 && typeof items[0] === "object" && items[0].original) {
+      const questions = items.map((q: { original: string }) => q.original);
+      const questionsKorean = items.map((q: { korean: string }) => q.korean || "");
+      return NextResponse.json({ questions, questionsKorean });
+    }
+
+    const questions: string[] = items;
+    return NextResponse.json({ questions });
   } catch (error) {
     console.error("Follow-up generation error:", error);
     return NextResponse.json(

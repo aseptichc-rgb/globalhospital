@@ -27,7 +27,7 @@ export function buildFollowUpPrompt(
   return `Chief complaint (Korean): ${complaintKr}
 Chief complaint (original): ${complaint}
 
-Generate exactly 5 follow-up questions in ${targetLang}.
+Generate exactly 5 follow-up questions in both ${targetLang} and Korean.
 The questions should cover:
 1. When did the symptoms start and how long have they lasted?
 2. How severe is the symptom? (pain scale, frequency, etc.)
@@ -35,8 +35,8 @@ The questions should cover:
 4. What makes it better or worse?
 5. Any relevant past medical conditions related to this symptom?
 
-Return ONLY a JSON array of exactly 5 question strings in ${targetLang}. No other text.
-Example format: ["question1", "question2", "question3", "question4", "question5"]`;
+Return ONLY a JSON array of exactly 5 objects, each with "original" (in ${targetLang}) and "korean" (in Korean) fields. No other text.
+Example format: [{"original":"question in ${targetLang}","korean":"질문 한국어"},{"original":"question2","korean":"질문2"},{"original":"question3","korean":"질문3"},{"original":"question4","korean":"질문4"},{"original":"question5","korean":"질문5"}]`;
 }
 
 export const STT_SYSTEM = `You are a medical speech-to-text transcription specialist at a Korean hospital.

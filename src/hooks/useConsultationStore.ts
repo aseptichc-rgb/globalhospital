@@ -9,13 +9,14 @@ interface ConsultationState {
   languageCode: string;
   formData: Record<FieldKey, BilingualField>;
   followUpQuestions: string[];
+  followUpQuestionsKorean: string[];
   followUpAnswers: Record<number, BilingualField>;
   sessionId: string | null;
   chatMessages: ChatMessage[];
 
   setLanguage: (code: string) => void;
   updateField: (key: FieldKey, value: BilingualField) => void;
-  setFollowUpQuestions: (questions: string[]) => void;
+  setFollowUpQuestions: (questions: string[], questionsKorean?: string[]) => void;
   updateFollowUpAnswer: (index: number, answer: BilingualField) => void;
   setSessionId: (id: string) => void;
   addChatMessage: (message: ChatMessage) => void;
@@ -38,6 +39,7 @@ export const useConsultationStore = create<ConsultationState>()(
       languageCode: "",
       formData: { ...initialFormData },
       followUpQuestions: [],
+      followUpQuestionsKorean: [],
       followUpAnswers: {},
       sessionId: null,
       chatMessages: [],
@@ -49,7 +51,8 @@ export const useConsultationStore = create<ConsultationState>()(
           formData: { ...state.formData, [key]: value },
         })),
 
-      setFollowUpQuestions: (questions) => set({ followUpQuestions: questions }),
+      setFollowUpQuestions: (questions, questionsKorean) =>
+        set({ followUpQuestions: questions, followUpQuestionsKorean: questionsKorean || [] }),
 
       updateFollowUpAnswer: (index, answer) =>
         set((state) => ({
@@ -68,6 +71,7 @@ export const useConsultationStore = create<ConsultationState>()(
           languageCode: "",
           formData: { ...initialFormData },
           followUpQuestions: [],
+          followUpQuestionsKorean: [],
           followUpAnswers: {},
           sessionId: null,
           chatMessages: [],

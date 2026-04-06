@@ -293,7 +293,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
             onClick={handleComplete}
             className="w-full py-4 bg-primary text-white font-semibold text-lg rounded-xl hover:bg-primary-dark transition-colors"
           >
-            {labels.completeButton} →
+            {labels.completeButton}
           </button>
         </div>
       ) : (

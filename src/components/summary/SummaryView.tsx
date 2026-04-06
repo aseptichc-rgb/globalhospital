@@ -20,7 +20,7 @@ const KOREAN_LABELS: Record<string, string> = {
 
 export default function SummaryView({ language }: SummaryViewProps) {
   const router = useRouter();
-  const { formData, followUpQuestions, followUpAnswers, setSessionId } =
+  const { formData, followUpQuestions, followUpQuestionsKorean, followUpAnswers, setSessionId } =
     useConsultationStore();
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export default function SummaryView({ language }: SummaryViewProps) {
     setSaving(true);
     try {
       const followUpQA = followUpQuestions.map((q, i) => ({
-        question: { original: q, korean: "" },
+        question: { original: q, korean: followUpQuestionsKorean[i] || "" },
         answer: followUpAnswers[i] || { original: "", korean: "" },
       }));
 
@@ -109,11 +109,19 @@ export default function SummaryView({ language }: SummaryViewProps) {
           <div className="space-y-4">
             {followUpQuestions.map((question, index) => {
               const answer = followUpAnswers[index];
+              const koreanQuestion = followUpQuestionsKorean[index];
               return (
                 <div key={index} className="border-b border-gray-50 pb-4 last:border-0">
-                  <p className="text-sm font-semibold text-primary mb-1">
-                    Q{index + 1}: {question}
-                  </p>
+                  <div className="mb-2">
+                    <p className="text-sm font-semibold text-primary">
+                      Q{index + 1}: {question}
+                    </p>
+                    {koreanQuestion && (
+                      <p className="text-sm font-semibold text-blue-600 mt-0.5">
+                        Q{index + 1}: {koreanQuestion}
+                      </p>
+                    )}
+                  </div>
                   {answer && (
                     <div className="grid grid-cols-2 gap-4 mt-2">
                       <div>

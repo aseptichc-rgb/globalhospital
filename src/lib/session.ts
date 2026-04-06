@@ -22,6 +22,16 @@ export async function getSession(
   return { id: doc.id, ...doc.data() } as ConsultationSession;
 }
 
+export async function getAllSessions(): Promise<ConsultationSession[]> {
+  const snapshot = await getDb()
+    .collection(COLLECTION)
+    .orderBy("createdAt", "desc")
+    .get();
+  return snapshot.docs.map(
+    (doc) => ({ id: doc.id, ...doc.data() }) as ConsultationSession
+  );
+}
+
 export async function updateSession(
   id: string,
   data: Partial<ConsultationSession>

@@ -64,8 +64,19 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <div className="mt-12 text-center text-sm text-gray-400">
-        <p>다국어 의료 통역 서비스 | Multilingual Medical Interpretation Service</p>
+      <div className="mt-12 text-center space-y-3">
+        <button
+          onClick={() => (window.location.href = "/history")}
+          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          문진 기록 보기
+        </button>
+        <p className="text-sm text-gray-400">
+          다국어 의료 통역 서비스 | Multilingual Medical Interpretation Service
+        </p>
       </div>
 
       {/* Other Language Modal */}
