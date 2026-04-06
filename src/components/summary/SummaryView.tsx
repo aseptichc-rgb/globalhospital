@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useConsultationStore } from "@/hooks/useConsultationStore";
-import { getMedicalLabels, FIELD_KEYS } from "@/config/medical-fields";
+import { FIELD_KEYS } from "@/config/medical-fields";
 import { LanguageConfig } from "@/types/language";
 
 interface SummaryViewProps {
@@ -20,17 +20,24 @@ const KOREAN_LABELS: Record<string, string> = {
 
 export default function SummaryView({ language }: SummaryViewProps) {
   const router = useRouter();
-  const { formData, followUpQuestions, followUpQuestionsKorean, followUpAnswers, setSessionId } =
-    useConsultationStore();
+  const {
+    formData,
+    followUpQuestions,
+    followUpQuestionsKorean,
+    followUpAnswers,
+    setSessionId,
+  } = useConsultationStore();
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
-  const labels = getMedicalLabels(language.code);
 
   const handleSave = async () => {
     setSaving(true);
     try {
       const followUpQA = followUpQuestions.map((q, i) => ({
-        question: { original: q, korean: followUpQuestionsKorean[i] || "" },
+        question: {
+          original: q,
+          korean: followUpQuestionsKorean[i] || "",
+        },
         answer: followUpAnswers[i] || { original: "", korean: "" },
       }));
 
@@ -66,9 +73,10 @@ export default function SummaryView({ language }: SummaryViewProps) {
     <div className="space-y-6">
       {/* Title */}
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Summary / 결과 요약
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-900">결과 요약</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          환자 언어: {language.nameInNative}
+        </p>
       </div>
 
       {/* Form Data Sections */}
@@ -80,22 +88,17 @@ export default function SummaryView({ language }: SummaryViewProps) {
             key={key}
             className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm"
           >
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs font-semibold text-primary mb-1">
-                  {labels[key]}
-                </p>
-                <p className="text-sm text-gray-800">{field.original}</p>
-              </div>
-              <div className="border-l border-gray-100 pl-4">
-                <p className="text-xs font-semibold text-blue-600 mb-1">
-                  {KOREAN_LABELS[key]}
-                </p>
-                <p className="text-sm text-gray-800">
-                  {field.korean || "-"}
-                </p>
-              </div>
-            </div>
+            <p className="text-xs font-semibold text-blue-600 mb-2">
+              {KOREAN_LABELS[key]}
+            </p>
+            <p className="text-sm text-gray-800">
+              {field.korean || field.original}
+            </p>
+            {field.korean && field.original && (
+              <p className="text-xs text-gray-400 mt-2">
+                ({language.nameInNative}) {field.original}
+              </p>
+            )}
           </div>
         );
       })}
@@ -104,40 +107,39 @@ export default function SummaryView({ language }: SummaryViewProps) {
       {followUpQuestions.length > 0 && (
         <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
           <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Follow-up Q&A / 추가 질문 답변
+            추가 질문 답변
           </h2>
           <div className="space-y-4">
             {followUpQuestions.map((question, index) => {
               const answer = followUpAnswers[index];
-              const koreanQuestion = followUpQuestionsKorean[index];
+              const koreanQuestion =
+                followUpQuestionsKorean[index] || question;
               return (
-                <div key={index} className="border-b border-gray-50 pb-4 last:border-0">
-                  <div className="mb-2">
-                    <p className="text-sm font-semibold text-primary">
-                      Q{index + 1}: {question}
+                <div
+                  key={index}
+                  className="border-b border-gray-50 pb-4 last:border-0"
+                >
+                  <p className="text-sm font-semibold text-primary mb-1">
+                    Q{index + 1}: {koreanQuestion}
+                  </p>
+                  {koreanQuestion !== question && (
+                    <p className="text-xs text-gray-400 mb-2">
+                      ({language.nameInNative}) {question}
                     </p>
-                    {koreanQuestion && (
-                      <p className="text-sm font-semibold text-blue-600 mt-0.5">
-                        Q{index + 1}: {koreanQuestion}
-                      </p>
-                    )}
-                  </div>
+                  )}
                   {answer && (
-                    <div className="grid grid-cols-2 gap-4 mt-2">
-                      <div>
-                        <p className="text-xs text-gray-500">
-                          {language.nameInNative}
+                    <div className="mt-2">
+                      <p className="text-xs font-semibold text-blue-600 mb-1">
+                        답변
+                      </p>
+                      <p className="text-sm text-gray-800">
+                        {answer.korean || answer.original || "-"}
+                      </p>
+                      {answer.korean && answer.original && (
+                        <p className="text-xs text-gray-400 mt-1">
+                          ({language.nameInNative}) {answer.original}
                         </p>
-                        <p className="text-sm text-gray-800">
-                          {answer.original || "-"}
-                        </p>
-                      </div>
-                      <div className="border-l border-gray-100 pl-4">
-                        <p className="text-xs text-gray-500">한국어</p>
-                        <p className="text-sm text-gray-800">
-                          {answer.korean || "-"}
-                        </p>
-                      </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -151,7 +153,7 @@ export default function SummaryView({ language }: SummaryViewProps) {
       {savedId && (
         <div className="bg-green-50 p-4 rounded-xl border border-green-200 text-center">
           <p className="text-sm text-green-700">
-            Session ID: <span className="font-mono font-bold">{savedId}</span>
+            세션 ID: <span className="font-mono font-bold">{savedId}</span>
           </p>
         </div>
       )}
@@ -163,21 +165,21 @@ export default function SummaryView({ language }: SummaryViewProps) {
           disabled={saving || !!savedId}
           className="w-full py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors disabled:opacity-40"
         >
-          {saving ? "Saving..." : savedId ? "Saved" : "Save to Database"}
+          {saving ? "저장 중..." : savedId ? "저장 완료" : "데이터베이스에 저장"}
         </button>
 
         <button
           onClick={handlePrint}
           className="w-full py-3 bg-gray-600 text-white font-semibold rounded-xl hover:bg-gray-700 transition-colors"
         >
-          Print / 인쇄
+          인쇄
         </button>
 
         <button
           onClick={handleStartChat}
           className="w-full py-4 bg-primary text-white font-semibold text-lg rounded-xl hover:bg-primary-dark transition-colors"
         >
-          Start Interpretation / 통역 시작 →
+          통역 시작 →
         </button>
       </div>
     </div>

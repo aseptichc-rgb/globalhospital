@@ -27,27 +27,26 @@ export async function POST(request: NextRequest) {
 
     const responseText = result.response.text().trim();
 
-    // Parse JSON array from response
-    const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+    // Parse JSON object with questions and questionsKorean
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return NextResponse.json(
-        { error: "Failed to parse questions" },
-        { status: 500 }
-      );
+      // Fallback: try parsing as array (old format)
+      const arrayMatch = responseText.match(/\[[\s\S]*\]/);
+      if (!arrayMatch) {
+        return NextResponse.json(
+          { error: "Failed to parse questions" },
+          { status: 500 }
+        );
+      }
+      const questions: string[] = JSON.parse(arrayMatch[0]);
+      return NextResponse.json({ questions: questions.slice(0, 5), questionsKorean: [] });
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
-    const items = parsed.slice(0, 5);
+    const questions: string[] = (parsed.questions || []).slice(0, 5);
+    const questionsKorean: string[] = (parsed.questionsKorean || []).slice(0, 5);
 
-    // Support both bilingual objects and plain strings (fallback)
-    if (items.length > 0 && typeof items[0] === "object" && items[0].original) {
-      const questions = items.map((q: { original: string }) => q.original);
-      const questionsKorean = items.map((q: { korean: string }) => q.korean || "");
-      return NextResponse.json({ questions, questionsKorean });
-    }
-
-    const questions: string[] = items;
-    return NextResponse.json({ questions });
+    return NextResponse.json({ questions, questionsKorean });
   } catch (error) {
     console.error("Follow-up generation error:", error);
     return NextResponse.json(

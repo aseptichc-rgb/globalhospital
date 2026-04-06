@@ -10,7 +10,6 @@ interface ConsultationState {
   formData: Record<FieldKey, BilingualField>;
   followUpQuestions: string[];
   followUpQuestionsKorean: string[];
-  followUpChiefComplaint: string;
   followUpAnswers: Record<number, BilingualField>;
   sessionId: string | null;
   chatMessages: ChatMessage[];
@@ -41,7 +40,6 @@ export const useConsultationStore = create<ConsultationState>()(
       formData: { ...initialFormData },
       followUpQuestions: [],
       followUpQuestionsKorean: [],
-      followUpChiefComplaint: "",
       followUpAnswers: {},
       sessionId: null,
       chatMessages: [],
@@ -54,11 +52,7 @@ export const useConsultationStore = create<ConsultationState>()(
         })),
 
       setFollowUpQuestions: (questions, questionsKorean) =>
-        set((state) => ({
-          followUpQuestions: questions,
-          followUpQuestionsKorean: questionsKorean || [],
-          followUpChiefComplaint: questions.length > 0 ? state.formData.chiefComplaint?.original || "" : "",
-        })),
+        set({ followUpQuestions: questions, followUpQuestionsKorean: questionsKorean || [] }),
 
       updateFollowUpAnswer: (index, answer) =>
         set((state) => ({
@@ -78,7 +72,6 @@ export const useConsultationStore = create<ConsultationState>()(
           formData: { ...initialFormData },
           followUpQuestions: [],
           followUpQuestionsKorean: [],
-          followUpChiefComplaint: "",
           followUpAnswers: {},
           sessionId: null,
           chatMessages: [],

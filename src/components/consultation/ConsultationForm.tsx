@@ -18,22 +18,35 @@ interface ChatBubble {
   koreanTranslation?: string;
 }
 
+type Phase = "preconsultation" | "generating" | "followup" | "complete";
+
 const QUESTION_KEYS: readonly FieldKey[] = FIELD_KEYS;
+const BASE_QUESTION_COUNT = QUESTION_KEYS.length; // 5
 
 export default function ConsultationForm({ language }: ConsultationFormProps) {
   const router = useRouter();
-  const { updateField, setLanguage, setFollowUpQuestions } = useConsultationStore();
+  const {
+    updateField,
+    setLanguage,
+    formData,
+    setFollowUpQuestions,
+    followUpQuestions,
+    updateFollowUpAnswer,
+  } = useConsultationStore();
   const labels = getMedicalLabels(language.code);
 
-  const [currentStep, setCurrentStep] = useState(0);
+  const [phase, setPhase] = useState<Phase>("preconsultation");
+  const [currentStep, setCurrentStep] = useState(0); // 0-4 for base, 0+ for followup
   const [chatMessages, setChatMessages] = useState<ChatBubble[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTranslating, setIsTranslating] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
+  const [answeredCount, setAnsweredCount] = useState(0);
+  const [totalQuestions, setTotalQuestions] = useState(BASE_QUESTION_COUNT);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const initializedRef = useRef(false);
+  const followUpGeneratedRef = useRef(false);
 
   const {
     transcript,
@@ -75,7 +88,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
   // Auto-scroll to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages, isComplete]);
+  }, [chatMessages, phase]);
 
   // Handle voice transcript
   useEffect(() => {
@@ -97,8 +110,74 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
     }
   }, [isProcessing, isListening, transcript, handleSend]);
 
-  const translateField = useCallback(
-    async (key: FieldKey, text: string): Promise<string> => {
+  // Generate follow-up questions after base questions complete
+  const generateFollowUpQuestions = useCallback(async () => {
+    if (followUpGeneratedRef.current) return;
+    followUpGeneratedRef.current = true;
+
+    setPhase("generating");
+
+    // Add generating message to chat
+    setChatMessages((prev) => [
+      ...prev,
+      { type: "system", text: labels.followUpGenerating },
+    ]);
+
+    try {
+      const res = await fetch("/api/gemini/followup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chiefComplaint: formData.chiefComplaint.original,
+          chiefComplaintKorean: formData.chiefComplaint.korean,
+          targetLang: language.geminiLangName,
+        }),
+      });
+      const data = await res.json();
+      if (data.questions && data.questions.length > 0) {
+        setFollowUpQuestions(data.questions, data.questionsKorean || []);
+        setTotalQuestions(BASE_QUESTION_COUNT + data.questions.length);
+        setCurrentStep(0);
+        setPhase("followup");
+
+        // Replace generating message with greeting + first follow-up question
+        setChatMessages((prev) => {
+          // Remove the generating message (last one)
+          const withoutGenerating = prev.slice(0, -1);
+          return [
+            ...withoutGenerating,
+            { type: "system", text: labels.followUpGreeting },
+            { type: "system", text: data.questions[0] },
+          ];
+        });
+
+        setTimeout(() => inputRef.current?.focus(), 100);
+      } else {
+        // No follow-up questions generated, go straight to complete
+        setPhase("complete");
+        setChatMessages((prev) => {
+          const withoutGenerating = prev.slice(0, -1);
+          return [
+            ...withoutGenerating,
+            { type: "system", text: labels.thankYouMessage },
+          ];
+        });
+      }
+    } catch {
+      // On error, skip follow-up and go to complete
+      setPhase("complete");
+      setChatMessages((prev) => {
+        const withoutGenerating = prev.slice(0, -1);
+        return [
+          ...withoutGenerating,
+          { type: "system", text: labels.thankYouMessage },
+        ];
+      });
+    }
+  }, [formData.chiefComplaint, language.geminiLangName, setFollowUpQuestions, labels]);
+
+  const translateText = useCallback(
+    async (text: string): Promise<string> => {
       if (!text.trim()) return "";
       try {
         const res = await fetch("/api/gemini/translate", {
@@ -112,19 +191,17 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
         });
         const data = await res.json();
         if (data.translatedText) {
-          updateField(key, { original: text, korean: data.translatedText });
           return data.translatedText;
         }
       } catch (error) {
         console.error("Translation error:", error);
       }
-      updateField(key, { original: text, korean: "" });
       return "";
     },
-    [language.geminiLangName, updateField]
+    [language.geminiLangName]
   );
 
-  const advanceToNext = useCallback(
+  const advanceBaseQuestion = useCallback(
     (fromStep: number) => {
       const nextStep = fromStep + 1;
       if (nextStep < QUESTION_KEYS.length) {
@@ -135,61 +212,158 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
         ]);
         setTimeout(() => inputRef.current?.focus(), 100);
       } else {
-        setIsComplete(true);
+        // Base questions done → generate follow-up questions
+        generateFollowUpQuestions();
+      }
+    },
+    [getQuestionText, generateFollowUpQuestions]
+  );
+
+  const advanceFollowUpQuestion = useCallback(
+    (fromStep: number) => {
+      const nextStep = fromStep + 1;
+      if (nextStep < followUpQuestions.length) {
+        setCurrentStep(nextStep);
         setChatMessages((prev) => [
           ...prev,
-          { type: "system", text: labels.thankYouMessage },
+          { type: "system", text: followUpQuestions[nextStep] },
+        ]);
+        setTimeout(() => inputRef.current?.focus(), 100);
+      } else {
+        // All done
+        setPhase("complete");
+        setChatMessages((prev) => [
+          ...prev,
+          { type: "system", text: labels.followUpCompleteMessage },
         ]);
       }
     },
-    [getQuestionText, labels.thankYouMessage]
+    [followUpQuestions, labels.followUpCompleteMessage]
   );
 
   const handleSend = useCallback(async () => {
     const text = inputValue.trim();
-    if (!text || currentStep >= QUESTION_KEYS.length || isTranslating) return;
+    if (!text || isTranslating) return;
 
-    const fieldKey = QUESTION_KEYS[currentStep];
+    if (phase === "preconsultation") {
+      if (currentStep >= QUESTION_KEYS.length) return;
+      const fieldKey = QUESTION_KEYS[currentStep];
 
-    // Add user message
-    setChatMessages((prev) => [...prev, { type: "user", text }]);
-    setInputValue("");
-    prevTranscriptRef.current = "";
-    resetTranscript();
+      // Add user message
+      setChatMessages((prev) => [...prev, { type: "user", text }]);
+      setInputValue("");
+      prevTranscriptRef.current = "";
+      resetTranscript();
 
-    // Translate
-    setIsTranslating(true);
-    const korean = await translateField(fieldKey, text);
-    setIsTranslating(false);
+      // Translate
+      setIsTranslating(true);
+      const korean = await translateText(text);
+      setIsTranslating(false);
 
-    // Update the last user message with translation
-    if (korean) {
-      setChatMessages((prev) => {
-        const updated = [...prev];
-        const lastUserIdx = updated.length - 1;
-        updated[lastUserIdx] = { ...updated[lastUserIdx], koreanTranslation: korean };
-        return updated;
-      });
+      // Save to store
+      updateField(fieldKey, { original: text, korean });
+
+      // Update last user message with translation
+      if (korean) {
+        setChatMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            ...updated[updated.length - 1],
+            koreanTranslation: korean,
+          };
+          return updated;
+        });
+      }
+
+      setAnsweredCount((c) => c + 1);
+      advanceBaseQuestion(currentStep);
+    } else if (phase === "followup") {
+      if (currentStep >= followUpQuestions.length) return;
+
+      // Add user message
+      setChatMessages((prev) => [...prev, { type: "user", text }]);
+      setInputValue("");
+      prevTranscriptRef.current = "";
+      resetTranscript();
+
+      // Translate
+      setIsTranslating(true);
+      const korean = await translateText(text);
+      setIsTranslating(false);
+
+      // Save to store
+      updateFollowUpAnswer(currentStep, { original: text, korean });
+
+      // Update last user message with translation
+      if (korean) {
+        setChatMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            ...updated[updated.length - 1],
+            koreanTranslation: korean,
+          };
+          return updated;
+        });
+      }
+
+      setAnsweredCount((c) => c + 1);
+      advanceFollowUpQuestion(currentStep);
     }
-
-    advanceToNext(currentStep);
-  }, [inputValue, currentStep, isTranslating, resetTranscript, translateField, advanceToNext]);
+  }, [
+    inputValue,
+    isTranslating,
+    phase,
+    currentStep,
+    followUpQuestions.length,
+    resetTranscript,
+    translateText,
+    updateField,
+    updateFollowUpAnswer,
+    advanceBaseQuestion,
+    advanceFollowUpQuestion,
+  ]);
 
   const handleSkip = useCallback(() => {
-    if (currentStep >= QUESTION_KEYS.length || isTranslating) return;
-    // First question (chiefComplaint) is required
-    if (currentStep === 0) return;
+    if (isTranslating) return;
 
-    const fieldKey = QUESTION_KEYS[currentStep];
-    updateField(fieldKey, { original: "", korean: "" });
+    if (phase === "preconsultation") {
+      if (currentStep >= QUESTION_KEYS.length) return;
+      if (currentStep === 0) return; // chiefComplaint is required
 
-    setChatMessages((prev) => [
-      ...prev,
-      { type: "user", text: `(${labels.skipButton})` },
-    ]);
+      const fieldKey = QUESTION_KEYS[currentStep];
+      updateField(fieldKey, { original: "", korean: "" });
 
-    advanceToNext(currentStep);
-  }, [currentStep, isTranslating, updateField, labels.skipButton, advanceToNext]);
+      setChatMessages((prev) => [
+        ...prev,
+        { type: "user", text: `(${labels.skipButton})` },
+      ]);
+
+      setAnsweredCount((c) => c + 1);
+      advanceBaseQuestion(currentStep);
+    } else if (phase === "followup") {
+      if (currentStep >= followUpQuestions.length) return;
+
+      updateFollowUpAnswer(currentStep, { original: "", korean: "" });
+
+      setChatMessages((prev) => [
+        ...prev,
+        { type: "user", text: `(${labels.skipButton})` },
+      ]);
+
+      setAnsweredCount((c) => c + 1);
+      advanceFollowUpQuestion(currentStep);
+    }
+  }, [
+    isTranslating,
+    phase,
+    currentStep,
+    followUpQuestions.length,
+    updateField,
+    updateFollowUpAnswer,
+    labels.skipButton,
+    advanceBaseQuestion,
+    advanceFollowUpQuestion,
+  ]);
 
   const handleMicClick = useCallback(() => {
     if (isListening) {
@@ -209,12 +383,16 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
   };
 
   const handleComplete = () => {
-    // Clear cached follow-up questions so they regenerate based on the current chief complaint
-    setFollowUpQuestions([], []);
-    router.push(`/${language.code}/followup`);
+    router.push(`/${language.code}/summary`);
   };
 
   const canUseVoice = language.speechSupported && isSupported;
+
+  // Determine if skip is allowed for current question
+  const canSkip =
+    phase === "followup" || (phase === "preconsultation" && currentStep > 0);
+
+  const showInput = phase === "preconsultation" || phase === "followup";
 
   return (
     <div className="flex flex-col h-[calc(100vh-2rem)] max-h-[800px]">
@@ -256,7 +434,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
         ))}
 
         {/* Translating indicator */}
-        {isTranslating && (
+        {(isTranslating || phase === "generating") && (
           <div className="flex justify-start">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mr-2 mt-1">
               <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -301,36 +479,47 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
       )}
 
       {/* Input Area or Complete Button */}
-      {isComplete ? (
+      {phase === "complete" ? (
         <div className="p-4 border-t border-gray-100 shrink-0">
+          {/* Final progress */}
+          <div className="flex items-center justify-center mb-3">
+            <span className="text-sm font-medium text-primary">
+              {answeredCount} / {totalQuestions}
+            </span>
+          </div>
           <button
             onClick={handleComplete}
             className="w-full py-4 bg-primary text-white font-semibold text-lg rounded-xl hover:bg-primary-dark transition-colors"
           >
-            {labels.completeButton}
+            {labels.followUpCompleteButton} →
           </button>
         </div>
-      ) : (
+      ) : showInput ? (
         <div className="p-4 border-t border-gray-100 shrink-0">
-          {/* Progress indicator */}
-          <div className="flex items-center gap-1.5 mb-3 justify-center">
-            {QUESTION_KEYS.map((_, idx) => (
-              <div
-                key={idx}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  idx < currentStep
-                    ? "w-6 bg-primary"
-                    : idx === currentStep
-                    ? "w-8 bg-primary animate-pulse"
-                    : "w-4 bg-gray-200"
-                }`}
-              />
-            ))}
+          {/* Progress indicator: answered / total */}
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <div className="flex items-center gap-1.5">
+              {Array.from({ length: totalQuestions }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    idx < answeredCount
+                      ? "w-4 bg-primary"
+                      : idx === answeredCount
+                      ? "w-6 bg-primary animate-pulse"
+                      : "w-2 bg-gray-200"
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-xs font-medium text-gray-500 ml-1">
+              {answeredCount} / {totalQuestions}
+            </span>
           </div>
 
           <div className="flex gap-2 items-end">
-            {/* Skip button (hidden for first required question) */}
-            {currentStep > 0 && (
+            {/* Skip button */}
+            {canSkip && (
               <button
                 onClick={handleSkip}
                 disabled={isTranslating}
@@ -372,7 +561,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
             </button>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

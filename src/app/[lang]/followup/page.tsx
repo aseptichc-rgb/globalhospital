@@ -1,6 +1,4 @@
-import { getLanguageByCode } from "@/config/languages";
-import { notFound } from "next/navigation";
-import FollowUpQuestions from "@/components/followup/FollowUpQuestions";
+import { redirect } from "next/navigation";
 
 export default async function FollowUpPage({
   params,
@@ -8,11 +6,7 @@ export default async function FollowUpPage({
   params: Promise<{ lang: string }>;
 }) {
   const { lang } = await params;
-  const language = getLanguageByCode(lang);
-
-  if (!language) {
-    notFound();
-  }
-
-  return <FollowUpQuestions language={language} />;
+  // Follow-up is now integrated into the consultation chat.
+  // Redirect to summary if someone navigates here directly.
+  redirect(`/${lang}/summary`);
 }
