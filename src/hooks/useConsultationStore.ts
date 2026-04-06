@@ -17,6 +17,7 @@ interface ConsultationState {
   setLanguage: (code: string) => void;
   updateField: (key: FieldKey, value: BilingualField) => void;
   setFollowUpQuestions: (questions: string[], questionsKorean?: string[]) => void;
+  addFollowUpQuestion: (question: string, questionKorean: string) => void;
   updateFollowUpAnswer: (index: number, answer: BilingualField) => void;
   setSessionId: (id: string) => void;
   addChatMessage: (message: ChatMessage) => void;
@@ -53,6 +54,12 @@ export const useConsultationStore = create<ConsultationState>()(
 
       setFollowUpQuestions: (questions, questionsKorean) =>
         set({ followUpQuestions: questions, followUpQuestionsKorean: questionsKorean || [] }),
+
+      addFollowUpQuestion: (question, questionKorean) =>
+        set((state) => ({
+          followUpQuestions: [...state.followUpQuestions, question],
+          followUpQuestionsKorean: [...state.followUpQuestionsKorean, questionKorean],
+        })),
 
       updateFollowUpAnswer: (index, answer) =>
         set((state) => ({

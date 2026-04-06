@@ -32,6 +32,7 @@ export interface MedicalFieldLabels {
   followUpCompleteMessage: string;
   followUpCompleteButton: string;
   followUpGenerating: string;
+  handoffMessage: string;
 }
 
 export const FIELD_KEYS = [
@@ -81,6 +82,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "感谢您的回答！补充问题已完成。",
     followUpCompleteButton: "查看摘要",
     followUpGenerating: "正在根据您的症状生成补充问题...",
+    handoffMessage: "问卷已完成。\n请将此设备交给医务人员。",
   },
   en: {
     pageTitle: "Pre-Consultation Questionnaire",
@@ -113,6 +115,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "Thank you! All additional questions are complete.",
     followUpCompleteButton: "View Summary",
     followUpGenerating: "Generating additional questions based on your symptoms...",
+    handoffMessage: "The survey is complete.\nPlease hand this device to the medical staff.",
   },
   ja: {
     pageTitle: "事前問診票",
@@ -145,6 +148,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "ありがとうございます！追加の質問は完了です。",
     followUpCompleteButton: "サマリーを見る",
     followUpGenerating: "症状に基づいて追加の質問を生成中...",
+    handoffMessage: "問診は完了しました。\nこの端末を医療スタッフにお渡しください。",
   },
   ru: {
     pageTitle: "Предварительная анкета",
@@ -177,6 +181,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "Спасибо! Все дополнительные вопросы заполнены.",
     followUpCompleteButton: "Посмотреть сводку",
     followUpGenerating: "Генерация дополнительных вопросов на основе ваших симптомов...",
+    handoffMessage: "Опрос завершён.\nПожалуйста, передайте это устройство медицинскому персоналу.",
   },
   vi: {
     pageTitle: "Phiếu khám bệnh sơ bộ",
@@ -209,6 +214,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "Cảm ơn bạn! Tất cả câu hỏi bổ sung đã hoàn tất.",
     followUpCompleteButton: "Xem tóm tắt",
     followUpGenerating: "Đang tạo câu hỏi bổ sung dựa trên triệu chứng của bạn...",
+    handoffMessage: "Khảo sát đã hoàn tất.\nVui lòng đưa thiết bị này cho nhân viên y tế.",
   },
   th: {
     pageTitle: "แบบสอบถามก่อนตรวจ",
@@ -241,6 +247,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "ขอบคุณค่ะ! คำถามเพิ่มเติมเสร็จสมบูรณ์แล้ว",
     followUpCompleteButton: "ดูสรุป",
     followUpGenerating: "กำลังสร้างคำถามเพิ่มเติมจากอาการของคุณ...",
+    handoffMessage: "แบบสอบถามเสร็จสมบูรณ์แล้ว\nกรุณาส่งอุปกรณ์นี้ให้เจ้าหน้าที่การแพทย์",
   },
   mn: {
     pageTitle: "Урьдчилсан асуумж",
@@ -273,6 +280,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "Баярлалаа! Нэмэлт асуултууд дууслаа.",
     followUpCompleteButton: "Хураангуй харах",
     followUpGenerating: "Таны шинж тэмдэгт үндэслэн нэмэлт асуулт үүсгэж байна...",
+    handoffMessage: "Асуумж дууслаа.\nЭнэ төхөөрөмжийг эмнэлгийн ажилтанд өгнө үү.",
   },
   tl: {
     pageTitle: "Paunang Palatanungan",
@@ -305,6 +313,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "Salamat! Lahat ng karagdagang tanong ay nakumpleto na.",
     followUpCompleteButton: "Tingnan ang Buod",
     followUpGenerating: "Gumagawa ng karagdagang tanong batay sa iyong mga sintomas...",
+    handoffMessage: "Tapos na ang survey.\nMangyaring ibigay ang device na ito sa medical staff.",
   },
   ar: {
     pageTitle: "استبيان ما قبل الاستشارة",
@@ -337,6 +346,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "شكراً لك! تم إكمال جميع الأسئلة الإضافية.",
     followUpCompleteButton: "عرض الملخص",
     followUpGenerating: "جارٍ إنشاء أسئلة إضافية بناءً على أعراضك...",
+    handoffMessage: "تم إكمال الاستبيان.\nيرجى تسليم هذا الجهاز إلى الطاقم الطبي.",
   },
   uz: {
     pageTitle: "Dastlabki soʻrovnoma",
@@ -369,6 +379,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "Rahmat! Barcha qoʻshimcha savollar yakunlandi.",
     followUpCompleteButton: "Xulosani koʻrish",
     followUpGenerating: "Alomatlaringizga asosan qoʻshimcha savollar yaratilmoqda...",
+    handoffMessage: "Soʻrovnoma yakunlandi.\nIltimos, bu qurilmani tibbiy xodimlarga bering.",
   },
   kk: {
     pageTitle: "Алдын ала сауалнама",
@@ -401,6 +412,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "Рахмет! Барлық қосымша сұрақтар аяқталды.",
     followUpCompleteButton: "Қорытындыны көру",
     followUpGenerating: "Белгілеріңізге сүйене отырып қосымша сұрақтар жасалуда...",
+    handoffMessage: "Сауалнама аяқталды.\nОсы құрылғыны медициналық қызметкерге беріңіз.",
   },
   id: {
     pageTitle: "Kuesioner Pra-Konsultasi",
@@ -433,6 +445,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "Terima kasih! Semua pertanyaan tambahan telah selesai.",
     followUpCompleteButton: "Lihat Ringkasan",
     followUpGenerating: "Membuat pertanyaan tambahan berdasarkan gejala Anda...",
+    handoffMessage: "Survei telah selesai.\nSilakan serahkan perangkat ini kepada staf medis.",
   },
   hi: {
     pageTitle: "पूर्व-परामर्श प्रश्नावली",
@@ -465,6 +478,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "धन्यवाद! सभी अतिरिक्त प्रश्न पूरे हो गए।",
     followUpCompleteButton: "सारांश देखें",
     followUpGenerating: "आपके लक्षणों के आधार पर अतिरिक्त प्रश्न तैयार किए जा रहे हैं...",
+    handoffMessage: "सर्वेक्षण पूरा हो गया है।\nकृपया यह उपकरण चिकित्सा कर्मचारियों को सौंपें।",
   },
   de: {
     pageTitle: "Vorab-Fragebogen",
@@ -497,6 +511,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "Vielen Dank! Alle zusätzlichen Fragen sind abgeschlossen.",
     followUpCompleteButton: "Zusammenfassung ansehen",
     followUpGenerating: "Zusätzliche Fragen werden basierend auf Ihren Symptomen erstellt...",
+    handoffMessage: "Die Befragung ist abgeschlossen.\nBitte übergeben Sie dieses Gerät dem medizinischen Personal.",
   },
   fr: {
     pageTitle: "Questionnaire de pré-consultation",
@@ -529,6 +544,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "Merci ! Toutes les questions supplémentaires sont terminées.",
     followUpCompleteButton: "Voir le résumé",
     followUpGenerating: "Génération de questions supplémentaires basées sur vos symptômes...",
+    handoffMessage: "Le questionnaire est terminé.\nVeuillez remettre cet appareil au personnel médical.",
   },
   my: {
     pageTitle: "ကြိုတင်စစ်ဆေးမှု မေးခွန်းလွှာ",
@@ -561,6 +577,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "ကျေးဇူးတင်ပါသည်! နောက်ထပ် မေးခွန်းများ ပြီးဆုံးပါပြီ။",
     followUpCompleteButton: "အကျဉ်းချုပ် ကြည့်ရန်",
     followUpGenerating: "သင့်ရောဂါလက္ခဏာအပေါ် အခြေခံ၍ နောက်ထပ် မေးခွန်းများ ဖန်တီးနေသည်...",
+    handoffMessage: "စစ်တမ်းပြီးဆုံးပါပြီ။\nကျေးဇူးပြု၍ ဤစက်ပစ္စည်းကို ဆေးဘက်ဆိုင်ရာ ဝန်ထမ်းထံ ပေးအပ်ပါ။",
   },
   km: {
     pageTitle: "កម្រងសំណួរមុនពេលពិគ្រោះ",
@@ -593,6 +610,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "សូមអរគុណ! សំណួរបន្ថែមបានបញ្ចប់។",
     followUpCompleteButton: "មើលសេចក្តីសង្ខេប",
     followUpGenerating: "កំពុងបង្កើតសំណួរបន្ថែមដោយផ្អែកលើរោគសញ្ញារបស់អ្នក...",
+    handoffMessage: "ការស្ទង់មតិបានបញ្ចប់។\nសូមប្រគល់ឧបករណ៍នេះទៅកាន់បុគ្គលិកវេជ្ជសាស្ត្រ។",
   },
   ne: {
     pageTitle: "पूर्व-परामर्श प्रश्नावली",
@@ -625,6 +643,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "धन्यवाद! सबै थप प्रश्नहरू पूरा भए।",
     followUpCompleteButton: "सारांश हेर्नुहोस्",
     followUpGenerating: "तपाईंको लक्षणहरूको आधारमा थप प्रश्नहरू बनाइँदैछ...",
+    handoffMessage: "सर्वेक्षण पूरा भयो।\nकृपया यो उपकरण चिकित्सा कर्मचारीलाई दिनुहोस्।",
   },
   bn: {
     pageTitle: "পূর্ব-পরামর্শ প্রশ্নাবলী",
@@ -657,6 +676,7 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "ধন্যবাদ! সমস্ত অতিরিক্ত প্রশ্ন সম্পূর্ণ হয়েছে।",
     followUpCompleteButton: "সারসংক্ষেপ দেখুন",
     followUpGenerating: "আপনার উপসর্গের উপর ভিত্তি করে অতিরিক্ত প্রশ্ন তৈরি করা হচ্ছে...",
+    handoffMessage: "সমীক্ষা সম্পূর্ণ হয়েছে।\nঅনুগ্রহ করে এই ডিভাইসটি চিকিৎসা কর্মীদের কাছে হস্তান্তর করুন।",
   },
   es: {
     pageTitle: "Cuestionario previo a la consulta",
@@ -689,5 +709,6 @@ export const MEDICAL_LABELS: Record<string, MedicalFieldLabels> = {
     followUpCompleteMessage: "¡Gracias! Todas las preguntas adicionales están completas.",
     followUpCompleteButton: "Ver resumen",
     followUpGenerating: "Generando preguntas adicionales basadas en sus síntomas...",
+    handoffMessage: "La encuesta ha terminado.\nPor favor, entregue este dispositivo al personal médico.",
   },
 };

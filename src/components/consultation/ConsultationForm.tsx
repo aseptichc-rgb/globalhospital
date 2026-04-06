@@ -29,8 +29,10 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
     updateField,
     setLanguage,
     formData,
-    setFollowUpQuestions,
     followUpQuestions,
+    followUpQuestionsKorean,
+    followUpAnswers,
+    addFollowUpQuestion,
     updateFollowUpAnswer,
   } = useConsultationStore();
   const labels = getMedicalLabels(language.code);
@@ -98,61 +100,67 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
     }
   }, [transcript]);
 
-  // Generate follow-up questions after base questions complete
-  const generateFollowUpQuestions = useCallback(async () => {
+  const TOTAL_FOLLOWUP_QUESTIONS = 5;
+
+  // Generate a single follow-up question dynamically
+  const generateNextFollowUpQuestion = useCallback(
+    async (questionNumber: number, previousQA: { question: string; questionKorean: string; answer: string; answerKorean: string }[]) => {
+      try {
+        const res = await fetch("/api/gemini/followup-dynamic", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chiefComplaint: formData.chiefComplaint.original,
+            chiefComplaintKorean: formData.chiefComplaint.korean,
+            targetLang: language.geminiLangName,
+            previousQA,
+            questionNumber,
+            totalQuestions: TOTAL_FOLLOWUP_QUESTIONS,
+          }),
+        });
+        const data = await res.json();
+        if (data.question) {
+          return { question: data.question, questionKorean: data.questionKorean || "" };
+        }
+      } catch (error) {
+        console.error("Dynamic follow-up generation error:", error);
+      }
+      return null;
+    },
+    [formData.chiefComplaint, language.geminiLangName]
+  );
+
+  // Generate first follow-up question after base questions complete
+  const startFollowUpPhase = useCallback(async () => {
     if (followUpGeneratedRef.current) return;
     followUpGeneratedRef.current = true;
 
     setPhase("generating");
 
-    // Add generating message to chat
     setChatMessages((prev) => [
       ...prev,
       { type: "system", text: labels.followUpGenerating },
     ]);
 
-    try {
-      const res = await fetch("/api/gemini/followup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chiefComplaint: formData.chiefComplaint.original,
-          chiefComplaintKorean: formData.chiefComplaint.korean,
-          targetLang: language.geminiLangName,
-        }),
+    const result = await generateNextFollowUpQuestion(1, []);
+
+    if (result) {
+      addFollowUpQuestion(result.question, result.questionKorean);
+      setTotalQuestions(BASE_QUESTION_COUNT + TOTAL_FOLLOWUP_QUESTIONS);
+      setCurrentStep(0);
+      setPhase("followup");
+
+      setChatMessages((prev) => {
+        const withoutGenerating = prev.slice(0, -1);
+        return [
+          ...withoutGenerating,
+          { type: "system", text: labels.followUpGreeting },
+          { type: "system", text: result.question },
+        ];
       });
-      const data = await res.json();
-      if (data.questions && data.questions.length > 0) {
-        setFollowUpQuestions(data.questions, data.questionsKorean || []);
-        setTotalQuestions(BASE_QUESTION_COUNT + data.questions.length);
-        setCurrentStep(0);
-        setPhase("followup");
 
-        // Replace generating message with greeting + first follow-up question
-        setChatMessages((prev) => {
-          // Remove the generating message (last one)
-          const withoutGenerating = prev.slice(0, -1);
-          return [
-            ...withoutGenerating,
-            { type: "system", text: labels.followUpGreeting },
-            { type: "system", text: data.questions[0] },
-          ];
-        });
-
-        setTimeout(() => inputRef.current?.focus(), 100);
-      } else {
-        // No follow-up questions generated, go straight to complete
-        setPhase("complete");
-        setChatMessages((prev) => {
-          const withoutGenerating = prev.slice(0, -1);
-          return [
-            ...withoutGenerating,
-            { type: "system", text: labels.thankYouMessage },
-          ];
-        });
-      }
-    } catch {
-      // On error, skip follow-up and go to complete
+      setTimeout(() => inputRef.current?.focus(), 100);
+    } else {
       setPhase("complete");
       setChatMessages((prev) => {
         const withoutGenerating = prev.slice(0, -1);
@@ -162,7 +170,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
         ];
       });
     }
-  }, [formData.chiefComplaint, language.geminiLangName, setFollowUpQuestions, labels]);
+  }, [generateNextFollowUpQuestion, addFollowUpQuestion, labels]);
 
   const translateText = useCallback(
     async (text: string): Promise<string> => {
@@ -200,25 +208,56 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
         ]);
         setTimeout(() => inputRef.current?.focus(), 100);
       } else {
-        // Base questions done → generate follow-up questions
-        generateFollowUpQuestions();
+        // Base questions done → start dynamic follow-up
+        startFollowUpPhase();
       }
     },
-    [getQuestionText, generateFollowUpQuestions]
+    [getQuestionText, startFollowUpPhase]
   );
 
   const advanceFollowUpQuestion = useCallback(
-    (fromStep: number) => {
-      const nextStep = fromStep + 1;
-      if (nextStep < followUpQuestions.length) {
-        setCurrentStep(nextStep);
+    async (fromStep: number, latestAnswer: { original: string; korean: string }) => {
+      const nextQuestionNumber = fromStep + 2; // fromStep is 0-indexed, questionNumber is 1-indexed
+
+      if (nextQuestionNumber > TOTAL_FOLLOWUP_QUESTIONS) {
+        // All follow-up questions done
+        setPhase("complete");
         setChatMessages((prev) => [
           ...prev,
-          { type: "system", text: followUpQuestions[nextStep] },
+          { type: "system", text: labels.followUpCompleteMessage },
+        ]);
+        return;
+      }
+
+      // Build previous Q&A context from store + the latest answer
+      const previousQA: { question: string; questionKorean: string; answer: string; answerKorean: string }[] = [];
+      for (let i = 0; i <= fromStep; i++) {
+        const answer = i === fromStep ? latestAnswer : followUpAnswers[i];
+        previousQA.push({
+          question: followUpQuestions[i] || "",
+          questionKorean: followUpQuestionsKorean[i] || "",
+          answer: answer?.original || "",
+          answerKorean: answer?.korean || "",
+        });
+      }
+
+      // Show generating indicator
+      setIsTranslating(true);
+
+      const result = await generateNextFollowUpQuestion(nextQuestionNumber, previousQA);
+
+      setIsTranslating(false);
+
+      if (result) {
+        addFollowUpQuestion(result.question, result.questionKorean);
+        setCurrentStep(fromStep + 1);
+        setChatMessages((prev) => [
+          ...prev,
+          { type: "system", text: result.question },
         ]);
         setTimeout(() => inputRef.current?.focus(), 100);
       } else {
-        // All done
+        // Failed to generate, complete early
         setPhase("complete");
         setChatMessages((prev) => [
           ...prev,
@@ -226,7 +265,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
         ]);
       }
     },
-    [followUpQuestions, labels.followUpCompleteMessage]
+    [followUpQuestions, followUpQuestionsKorean, followUpAnswers, generateNextFollowUpQuestion, addFollowUpQuestion, labels.followUpCompleteMessage]
   );
 
   const handleSend = useCallback(async () => {
@@ -279,8 +318,10 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
       const korean = await translateText(text);
       setIsTranslating(false);
 
+      const answer = { original: text, korean };
+
       // Save to store
-      updateFollowUpAnswer(currentStep, { original: text, korean });
+      updateFollowUpAnswer(currentStep, answer);
 
       // Update last user message with translation
       if (korean) {
@@ -295,7 +336,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
       }
 
       setAnsweredCount((c) => c + 1);
-      advanceFollowUpQuestion(currentStep);
+      advanceFollowUpQuestion(currentStep, answer);
     }
   }, [
     inputValue,
@@ -343,7 +384,8 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
     } else if (phase === "followup") {
       if (currentStep >= followUpQuestions.length) return;
 
-      updateFollowUpAnswer(currentStep, { original: "", korean: "" });
+      const emptyAnswer = { original: "", korean: "" };
+      updateFollowUpAnswer(currentStep, emptyAnswer);
 
       setChatMessages((prev) => [
         ...prev,
@@ -351,7 +393,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
       ]);
 
       setAnsweredCount((c) => c + 1);
-      advanceFollowUpQuestion(currentStep);
+      advanceFollowUpQuestion(currentStep, emptyAnswer);
     }
   }, [
     isTranslating,
