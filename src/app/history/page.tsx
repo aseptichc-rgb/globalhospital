@@ -9,8 +9,8 @@ const KOREAN_LABELS: Record<string, string> = {
   chiefComplaint: "주증상",
   pastMedicalHistory: "과거력",
   surgicalHistory: "수술력",
-  currentMedications: "현재 복용 약물",
-  otherInfo: "기타 특이사항",
+  currentMedications: "복용 약물",
+  otherInfo: "기타",
 };
 
 const FIELD_KEYS = [
@@ -165,65 +165,69 @@ export default function HistoryPage() {
 
                 {/* Expanded Detail */}
                 {isExpanded && (
-                  <div className="px-5 pb-5 border-t border-gray-100">
-                    {/* Form Data */}
-                    <div className="mt-4 space-y-3">
-                      {FIELD_KEYS.map((key) => {
-                        const field = session.formData?.[key];
-                        if (!field?.original && !field?.korean) return null;
-                        return (
-                          <div key={key} className="bg-gray-50 p-3 rounded-lg">
-                            <p className="text-xs font-semibold text-blue-600 mb-1">
-                              {KOREAN_LABELS[key]}
-                            </p>
-                            <p className="text-sm text-gray-800">
-                              {field.korean || field.original || "-"}
-                            </p>
-                            {field.korean && field.original && field.korean !== field.original && (
-                              <p className="text-xs text-gray-400 mt-1">
-                                ({field.original})
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                  <div className="border-t border-gray-100">
+                    {/* Form Data - compact table */}
+                    <table className="w-full">
+                      <tbody>
+                        {FIELD_KEYS.map((key) => {
+                          const field = session.formData?.[key];
+                          if (!field?.original && !field?.korean) return null;
+                          return (
+                            <tr key={key} className="border-b border-gray-50 last:border-0">
+                              <td className="px-4 py-2 text-xs font-semibold text-blue-600 whitespace-nowrap align-top w-20 bg-gray-50/50">
+                                {KOREAN_LABELS[key]}
+                              </td>
+                              <td className="px-3 py-2">
+                                <span className="text-sm text-gray-800">
+                                  {field.korean || field.original || "-"}
+                                </span>
+                                {field.korean && field.original && field.korean !== field.original && (
+                                  <span className="text-xs text-gray-400 ml-2">
+                                    ({field.original})
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
 
-                    {/* Follow-up Q&A */}
+                    {/* Follow-up Q&A - compact table */}
                     {session.followUpQA && session.followUpQA.length > 0 && (
-                      <div className="mt-4">
-                        <h3 className="text-sm font-bold text-gray-700 mb-3">
-                          추가 질문 답변
-                        </h3>
-                        <div className="space-y-3">
-                          {session.followUpQA.map((qa, idx) => (
-                            <div key={idx} className="bg-gray-50 p-3 rounded-lg">
-                              <p className="text-xs font-semibold text-blue-600 mb-1">
-                                Q{idx + 1}: {qa.question.korean || qa.question.original}
-                              </p>
-                              {qa.question.korean && qa.question.original && qa.question.korean !== qa.question.original && (
-                                <p className="text-xs text-gray-400 mb-1">
-                                  ({qa.question.original})
-                                </p>
-                              )}
-                              <p className="text-sm text-gray-800">
-                                {qa.answer.korean || qa.answer.original || "-"}
-                              </p>
-                              {qa.answer.korean && qa.answer.original && qa.answer.korean !== qa.answer.original && (
-                                <p className="text-xs text-gray-400 mt-1">
-                                  ({qa.answer.original})
-                                </p>
-                              )}
-                            </div>
-                          ))}
+                      <>
+                        <div className="px-4 py-1.5 bg-gray-50 border-y border-gray-100">
+                          <h3 className="text-xs font-bold text-gray-500">추가 질문 답변</h3>
                         </div>
-                      </div>
+                        <table className="w-full">
+                          <tbody>
+                            {session.followUpQA.map((qa, idx) => (
+                              <tr key={idx} className="border-b border-gray-50 last:border-0">
+                                <td className="px-4 py-2 text-xs font-semibold text-primary whitespace-nowrap align-top w-20 bg-gray-50/50">
+                                  Q{idx + 1}
+                                </td>
+                                <td className="px-3 py-2">
+                                  <p className="text-xs text-gray-500 mb-0.5">
+                                    {qa.question.korean || qa.question.original}
+                                  </p>
+                                  <p className="text-sm text-gray-800 font-medium">
+                                    {qa.answer.korean || qa.answer.original || "-"}
+                                  </p>
+                                  {qa.answer.korean && qa.answer.original && qa.answer.korean !== qa.answer.original && (
+                                    <p className="text-xs text-gray-400">({qa.answer.original})</p>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </>
                     )}
 
                     {/* Session ID */}
-                    <div className="mt-4 pt-3 border-t border-gray-100">
+                    <div className="px-4 py-2 bg-gray-50/50 border-t border-gray-100">
                       <p className="text-xs text-gray-400">
-                        Session ID: <span className="font-mono">{session.id}</span>
+                        ID: <span className="font-mono">{session.id}</span>
                       </p>
                     </div>
                   </div>

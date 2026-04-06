@@ -466,11 +466,6 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
               }`}
             >
               <p className="text-xl whitespace-pre-wrap leading-relaxed">{msg.text}</p>
-              {msg.koreanTranslation && (
-                <p className="text-lg mt-2 pt-2 border-t border-white/20 opacity-80 leading-relaxed">
-                  🇰🇷 {msg.koreanTranslation}
-                </p>
-              )}
             </div>
           </div>
         ))}
