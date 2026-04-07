@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import FlagImage from "@/components/ui/FlagImage";
 import ConversationHeaderButtons from "@/components/ui/ConversationHeaderButtons";
+import KeyboardWrapper from "@/components/keyboard/KeyboardWrapper";
 
 export function generateStaticParams() {
   return VALID_LANG_CODES.map((lang) => ({ lang }));
@@ -58,7 +59,9 @@ export default async function LangLayout({
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6">{children}</main>
+      <KeyboardWrapper languageCode={language.code} dir={language.dir}>
+        <main className="max-w-2xl mx-auto px-4 py-6">{children}</main>
+      </KeyboardWrapper>
     </div>
   );
 }

@@ -4,9 +4,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import MicrophoneButton from "@/components/ui/MicrophoneButton";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
 import { useConsultationStore } from "@/hooks/useConsultationStore";
 import { LanguageConfig } from "@/types/language";
 import { getMedicalLabels } from "@/config/medical-fields";
+import KeyboardTextarea from "@/components/keyboard/KeyboardTextarea";
 
 interface FollowUpQuestionsProps {
   language: LanguageConfig;
@@ -53,6 +55,8 @@ export default function FollowUpQuestions({ language }: FollowUpQuestionsProps) 
     error: speechError,
     isProcessing,
   } = useSpeechRecognition(language.bcp47);
+
+  const { speak, cancel: cancelSpeech } = useSpeechSynthesis(language.bcp47);
 
   const prevTranscriptRef = useRef("");
 
@@ -129,6 +133,18 @@ export default function FollowUpQuestions({ language }: FollowUpQuestionsProps) 
       setInputValue(transcript);
     }
   }, [transcript]);
+
+  // Auto-speak new system messages (questions) aloud
+  const lastSpokenIndexRef = useRef(-1);
+  useEffect(() => {
+    if (chatMessages.length === 0) return;
+    const lastIdx = chatMessages.length - 1;
+    const lastMsg = chatMessages[lastIdx];
+    if (lastMsg.type === "system" && lastIdx > lastSpokenIndexRef.current) {
+      lastSpokenIndexRef.current = lastIdx;
+      speak(lastMsg.text);
+    }
+  }, [chatMessages, speak]);
 
   const translateAnswer = useCallback(
     async (text: string): Promise<string> => {
@@ -224,11 +240,12 @@ export default function FollowUpQuestions({ language }: FollowUpQuestionsProps) 
     if (isListening) {
       stopListening();
     } else {
+      cancelSpeech();
       resetTranscript();
       prevTranscriptRef.current = "";
       startListening();
     }
-  }, [isListening, startListening, stopListening, resetTranscript]);
+  }, [isListening, startListening, stopListening, resetTranscript, cancelSpeech]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -316,6 +333,17 @@ export default function FollowUpQuestions({ language }: FollowUpQuestionsProps) 
               }`}
             >
               <p className="text-xl whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+              {msg.type === "system" && (
+                <button
+                  onClick={() => speak(msg.text)}
+                  className="mt-2 p-1.5 rounded-full hover:bg-gray-200 transition-colors inline-flex items-center text-gray-400 hover:text-primary"
+                  aria-label="Read aloud"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                </button>
+              )}
               {msg.koreanTranslation && (
                 <p className="text-lg mt-2 pt-2 border-t border-white/20 opacity-80 leading-relaxed">
                   🇰🇷 {msg.koreanTranslation}
@@ -408,10 +436,10 @@ export default function FollowUpQuestions({ language }: FollowUpQuestionsProps) 
               {labels.skipButton}
             </button>
 
-            <textarea
-              ref={inputRef}
+            <KeyboardTextarea
+              textareaRef={inputRef}
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onValueChange={setInputValue}
               onKeyDown={handleKeyDown}
               placeholder={labels.chatInputPlaceholder}
               lang={language.bcp47}

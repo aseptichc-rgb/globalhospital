@@ -1,0 +1,146 @@
+/* =============================================
+   Hospital kiosk virtual keyboard theme
+   Large keys for elderly / unfamiliar users
+   ============================================= */
+
+.kiosk-keyboard.simple-keyboard {
+  background: #f1f3f5;
+  border-top: 1px solid #dee2e6;
+  padding: 8px 6px 12px;
+  font-family: inherit;
+}
+
+.kiosk-keyboard .hg-row {
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.kiosk-keyboard .hg-button {
+  height: 54px;
+  min-width: 36px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  color: #212529;
+  font-size: 20px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.1s, transform 0.08s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.kiosk-keyboard .hg-button:active,
+.kiosk-keyboard .hg-button.hg-activeButton {
+  background: #e9ecef;
+  transform: scale(0.95);
+}
+
+/* Space bar */
+.kiosk-keyboard .hg-button[data-skbtn="{space}"] {
+  min-width: 200px;
+  flex-grow: 4;
+}
+
+/* Backspace */
+.kiosk-keyboard .hg-button[data-skbtn="{bksp}"] {
+  min-width: 72px;
+  font-size: 16px;
+  color: #868e96;
+}
+
+/* Shift / Caps */
+.kiosk-keyboard .hg-button[data-skbtn="{shift}"],
+.kiosk-keyboard .hg-button[data-skbtn="{lock}"] {
+  min-width: 64px;
+  font-size: 14px;
+  color: #495057;
+}
+
+/* Enter */
+.kiosk-keyboard .hg-button[data-skbtn="{enter}"] {
+  min-width: 72px;
+  background: #1e40af;
+  color: #ffffff;
+  border-color: #1e40af;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.kiosk-keyboard .hg-button[data-skbtn="{enter}"]:active {
+  background: #1e3a8a;
+}
+
+/* Active shift state */
+.kiosk-keyboard .hg-button.hg-highlight {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+/* RTL keyboard adjustments */
+.kiosk-keyboard-rtl.simple-keyboard {
+  direction: rtl;
+}
+
+/* Toolbar above keyboard */
+.keyboard-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+}
+
+.keyboard-toolbar-lang {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.keyboard-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.keyboard-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: #e9ecef;
+  color: #495057;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.keyboard-close-btn:active {
+  background: #dee2e6;
+}
+
+/* Slide-up animation */
+.keyboard-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  transform: translateY(100%);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.keyboard-container.keyboard-visible {
+  transform: translateY(0);
+}

@@ -4,9 +4,11 @@ import { useCallback, useRef, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MicrophoneButton from "@/components/ui/MicrophoneButton";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
 import { useConsultationStore } from "@/hooks/useConsultationStore";
 import { getMedicalLabels, FIELD_KEYS, FieldKey } from "@/config/medical-fields";
 import { LanguageConfig } from "@/types/language";
+import KeyboardTextarea from "@/components/keyboard/KeyboardTextarea";
 
 interface ConsultationFormProps {
   language: LanguageConfig;
@@ -61,6 +63,8 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
     isProcessing,
   } = useSpeechRecognition(language.bcp47);
 
+  const { speak, cancel: cancelSpeech } = useSpeechSynthesis(language.bcp47);
+
   const prevTranscriptRef = useRef("");
 
   useEffect(() => {
@@ -99,6 +103,18 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
       setInputValue(transcript);
     }
   }, [transcript]);
+
+  // Auto-speak new system messages (questions) aloud
+  const lastSpokenIndexRef = useRef(-1);
+  useEffect(() => {
+    if (chatMessages.length === 0) return;
+    const lastIdx = chatMessages.length - 1;
+    const lastMsg = chatMessages[lastIdx];
+    if (lastMsg.type === "system" && lastIdx > lastSpokenIndexRef.current) {
+      lastSpokenIndexRef.current = lastIdx;
+      speak(lastMsg.text);
+    }
+  }, [chatMessages, speak]);
 
   const TOTAL_FOLLOWUP_QUESTIONS = 5;
 
@@ -411,11 +427,12 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
     if (isListening) {
       stopListening();
     } else {
+      cancelSpeech();
       resetTranscript();
       prevTranscriptRef.current = "";
       startListening();
     }
-  }, [isListening, startListening, stopListening, resetTranscript]);
+  }, [isListening, startListening, stopListening, resetTranscript, cancelSpeech]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -466,6 +483,17 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
               }`}
             >
               <p className="text-xl whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+              {msg.type === "system" && (
+                <button
+                  onClick={() => speak(msg.text)}
+                  className="mt-2 p-1.5 rounded-full hover:bg-gray-200 transition-colors inline-flex items-center text-gray-400 hover:text-primary"
+                  aria-label="Read aloud"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -566,10 +594,10 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
               </button>
             )}
 
-            <textarea
-              ref={inputRef}
+            <KeyboardTextarea
+              textareaRef={inputRef}
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onValueChange={setInputValue}
               onKeyDown={handleKeyDown}
               placeholder={labels.chatInputPlaceholder}
               lang={language.bcp47}

@@ -3,6 +3,7 @@
 import { useEffect, useCallback, useRef } from "react";
 import MicrophoneButton from "@/components/ui/MicrophoneButton";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import KeyboardTextarea from "@/components/keyboard/KeyboardTextarea";
 
 interface VoiceInputProps {
   value: string;
@@ -61,9 +62,9 @@ export default function VoiceInput({
         {label}
       </label>
       <div className="flex gap-3 items-start">
-        <textarea
+        <KeyboardTextarea
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onValueChange={onChange}
           placeholder={placeholder}
           lang={bcp47}
           dir={dir}
