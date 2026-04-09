@@ -10,7 +10,6 @@ import { getMedicalLabels, FIELD_KEYS, FieldKey } from "@/config/medical-fields"
 import { LanguageConfig } from "@/types/language";
 import KeyboardTextarea from "@/components/keyboard/KeyboardTextarea";
 import { useKeyboardContext } from "@/components/keyboard/VirtualKeyboardProvider";
-import { IME_LANGUAGES } from "@/components/keyboard/keyboardLayouts";
 
 interface ConsultationFormProps {
   language: LanguageConfig;
@@ -618,37 +617,20 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
               </button>
             )}
 
-            {IME_LANGUAGES.has(language.code) ? (
-              <textarea
-                ref={inputRef}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={labels.chatInputPlaceholder}
-                lang={language.bcp47}
-                autoComplete="off"
-                autoCorrect="off"
-                dir={language.dir}
-                rows={1}
-                className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent resize-none text-gray-800 placeholder-gray-400 text-lg"
-                style={{ minHeight: "48px", maxHeight: "120px" }}
-              />
-            ) : (
-              <KeyboardTextarea
-                textareaRef={inputRef}
-                value={inputValue}
-                onValueChange={setInputValue}
-                onKeyDown={handleKeyDown}
-                placeholder={labels.chatInputPlaceholder}
-                lang={language.bcp47}
-                autoComplete="off"
-                autoCorrect="off"
-                dir={language.dir}
-                rows={1}
-                className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent resize-none text-gray-800 placeholder-gray-400 text-lg"
-                style={{ minHeight: "48px", maxHeight: "120px" }}
-              />
-            )}
+            <KeyboardTextarea
+              textareaRef={inputRef}
+              value={inputValue}
+              onValueChange={setInputValue}
+              onKeyDown={handleKeyDown}
+              placeholder={labels.chatInputPlaceholder}
+              lang={language.bcp47}
+              autoComplete="off"
+              autoCorrect="off"
+              dir={language.dir}
+              rows={1}
+              className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent resize-none text-gray-800 placeholder-gray-400 text-lg"
+              style={{ minHeight: "48px", maxHeight: "120px" }}
+            />
 
             {canUseVoice && (
               <MicrophoneButton
