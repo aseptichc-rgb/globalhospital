@@ -82,7 +82,7 @@ This is question ${questionNumber} of ${totalQuestions}.
   if (previousQA.length > 0) {
     context += `\nPrevious questions and answers:\n`;
     previousQA.forEach((qa, i) => {
-      context += `Q${i + 1}: ${qa.questionKorean}\nA${i + 1}: ${qa.answerKorean || qa.answer || "(skipped)"}\n`;
+      context += `Q${i + 1}: ${qa.question || qa.questionKorean}\nA${i + 1}: ${qa.answer || qa.answerKorean || "(skipped)"}\n`;
     });
   }
 
@@ -97,6 +97,8 @@ ${questionNumber === 4 ? "- Ask about aggravating or relieving factors, or what 
 ${questionNumber === 5 ? "- Ask about anything else clinically important that hasn't been covered yet, based on the conversation so far" : ""}
 
 IMPORTANT: Adapt the question based on previous answers. If the patient already mentioned relevant information, don't ask about it again — instead ask a deeper or related question.
+
+CRITICAL: The "question" field MUST ALWAYS be written in ${targetLang}. Never write the "question" field in Korean or any other language — it must be in ${targetLang} only.
 
 Return ONLY a JSON object: {"question": "question in ${targetLang}", "questionKorean": "question in Korean"}`;
 

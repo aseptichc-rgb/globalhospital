@@ -111,6 +111,8 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
         // Keyboard is open — shrink container to fit above keyboard
         container.style.height = `${vv.height}px`;
         container.style.maxHeight = `${vv.height}px`;
+        // Prevent page scroll caused by keyboard
+        window.scrollTo(0, 0);
       } else {
         // Keyboard is closed — restore default
         container.style.height = "";
@@ -120,8 +122,19 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     };
 
+    // Also handle scroll event to keep viewport pinned
+    const onScroll = () => {
+      if (window.innerHeight - vv.height > 50) {
+        window.scrollTo(0, 0);
+      }
+    };
+
     vv.addEventListener("resize", onResize);
-    return () => vv.removeEventListener("resize", onResize);
+    vv.addEventListener("scroll", onScroll);
+    return () => {
+      vv.removeEventListener("resize", onResize);
+      vv.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   // Handle voice transcript
@@ -334,18 +347,6 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
       // Save to store
       updateField(fieldKey, { original: text, korean });
 
-      // Update last user message with translation
-      if (korean) {
-        setChatMessages((prev) => {
-          const updated = [...prev];
-          updated[updated.length - 1] = {
-            ...updated[updated.length - 1],
-            koreanTranslation: korean,
-          };
-          return updated;
-        });
-      }
-
       setAnsweredCount((c) => c + 1);
       advanceBaseQuestion(currentStep);
     } else if (phase === "followup") {
@@ -366,18 +367,6 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
 
       // Save to store
       updateFollowUpAnswer(currentStep, answer);
-
-      // Update last user message with translation
-      if (korean) {
-        setChatMessages((prev) => {
-          const updated = [...prev];
-          updated[updated.length - 1] = {
-            ...updated[updated.length - 1],
-            koreanTranslation: korean,
-          };
-          return updated;
-        });
-      }
 
       setAnsweredCount((c) => c + 1);
       advanceFollowUpQuestion(currentStep, answer);
