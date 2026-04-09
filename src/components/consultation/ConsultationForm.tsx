@@ -48,6 +48,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
   const [totalQuestions, setTotalQuestions] = useState(BASE_QUESTION_COUNT);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const initializedRef = useRef(false);
   const followUpGeneratedRef = useRef(false);
@@ -95,6 +96,33 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, phase]);
+
+  // Adjust container height when mobile keyboard opens/closes
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const onResize = () => {
+      const container = containerRef.current;
+      if (!container) return;
+      // visualViewport.height shrinks when virtual keyboard is visible
+      const keyboardOffset = window.innerHeight - vv.height;
+      if (keyboardOffset > 50) {
+        // Keyboard is open — shrink container to fit above keyboard
+        container.style.height = `${vv.height}px`;
+        container.style.maxHeight = `${vv.height}px`;
+      } else {
+        // Keyboard is closed — restore default
+        container.style.height = "";
+        container.style.maxHeight = "";
+      }
+      // Scroll chat to bottom after resize
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    };
+
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
+  }, []);
 
   // Handle voice transcript
   useEffect(() => {
@@ -454,7 +482,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
   const showInput = phase === "preconsultation" || phase === "followup";
 
   return (
-    <div className="flex flex-col h-[calc(100vh-2rem)] max-h-[800px]">
+    <div ref={containerRef} className="flex flex-col h-[100dvh]">
       {/* Header */}
       <div className="text-center py-4 border-b border-gray-100 shrink-0">
         <h1 className="text-xl font-bold text-gray-900">{labels.pageTitle}</h1>
