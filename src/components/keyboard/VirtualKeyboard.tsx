@@ -37,6 +37,9 @@ export default function VirtualKeyboard() {
   const [layoutName, setLayoutName] = useState("default");
   const keyboardRef = useRef<any>(null);
 
+  // Track the last value we know about to prevent sync loops
+  const lastKnownValue = useRef("");
+
   // Load layout when language changes
   useEffect(() => {
     let cancelled = false;
@@ -51,12 +54,10 @@ export default function VirtualKeyboard() {
     };
   }, [languageCode]);
 
-  // Track whether the change originated from the virtual keyboard
-  const fromKeyboardRef = useRef(false);
-
   const onChange = useCallback(
     (input: string) => {
-      fromKeyboardRef.current = true;
+      // Update our tracking ref so the sync effect knows not to re-set
+      lastKnownValue.current = input;
       if (activeSetValue.current) {
         activeSetValue.current(input);
       }
@@ -76,23 +77,18 @@ export default function VirtualKeyboard() {
       if (button === "{shift}" || button === "{lock}") {
         setLayoutName((prev) => (prev === "default" ? "shift" : "default"));
       }
-      if (button === "{enter}") {
-        // Do nothing — let the textarea's onKeyDown handle Enter
-      }
     },
     [],
   );
 
-  // Sync keyboard input with textarea value when it changes externally
-  // (e.g. voice input, clearing after send) — skip if change came from keyboard itself
+  // Sync keyboard buffer with textarea value ONLY when they differ
+  // (handles external changes like voice input or clearing after send)
   useEffect(() => {
-    if (fromKeyboardRef.current) {
-      fromKeyboardRef.current = false;
-      return;
-    }
-    if (keyboardRef.current && activeInputRef.current) {
-      const currentVal = activeInputRef.current.value;
-      keyboardRef.current.setInput(currentVal);
+    if (!keyboardRef.current || !activeInputRef.current) return;
+    const textareaVal = activeInputRef.current.value;
+    if (textareaVal !== lastKnownValue.current) {
+      lastKnownValue.current = textareaVal;
+      keyboardRef.current.setInput(textareaVal);
     }
   });
 
@@ -142,8 +138,6 @@ export default function VirtualKeyboard() {
         mergeDisplay
         theme={`hg-theme-default kiosk-keyboard ${isRtl ? "kiosk-keyboard-rtl" : ""}`}
         preventMouseDownDefault
-        physicalKeyboardHighlight
-        physicalKeyboardHighlightPress
       />
     </div>
   );
