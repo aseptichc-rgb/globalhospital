@@ -28,6 +28,10 @@ interface KeyboardContextValue {
   languageCode: string;
   /** Text direction */
   dir: "ltr" | "rtl";
+  /** Height of the virtual keyboard in pixels (0 when hidden) */
+  keyboardHeight: number;
+  /** Set the keyboard height (called by VirtualKeyboard component) */
+  setKeyboardHeight: (h: number) => void;
 }
 
 const KeyboardContext = createContext<KeyboardContextValue | null>(null);
@@ -54,11 +58,15 @@ export default function VirtualKeyboardProvider({
   dir,
 }: ProviderProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const activeInputRef = useRef<HTMLTextAreaElement | null>(null);
   const activeSetValue = useRef<((v: string) => void) | null>(null);
 
   const show = useCallback(() => setIsVisible(true), []);
-  const hide = useCallback(() => setIsVisible(false), []);
+  const hide = useCallback(() => {
+    setIsVisible(false);
+    setKeyboardHeight(0);
+  }, []);
 
   const registerInput = useCallback(
     (el: HTMLTextAreaElement | null, setValue: (v: string) => void) => {
@@ -79,6 +87,8 @@ export default function VirtualKeyboardProvider({
         activeSetValue,
         languageCode,
         dir,
+        keyboardHeight,
+        setKeyboardHeight,
       }}
     >
       {children}

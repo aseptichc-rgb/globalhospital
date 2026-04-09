@@ -9,6 +9,8 @@ import { useConsultationStore } from "@/hooks/useConsultationStore";
 import { getMedicalLabels, FIELD_KEYS, FieldKey } from "@/config/medical-fields";
 import { LanguageConfig } from "@/types/language";
 import KeyboardTextarea from "@/components/keyboard/KeyboardTextarea";
+import { useKeyboardContext } from "@/components/keyboard/VirtualKeyboardProvider";
+import { IME_LANGUAGES } from "@/components/keyboard/keyboardLayouts";
 
 interface ConsultationFormProps {
   language: LanguageConfig;
@@ -37,6 +39,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
     addFollowUpQuestion,
     updateFollowUpAnswer,
   } = useConsultationStore();
+  const { keyboardHeight } = useKeyboardContext();
   const labels = getMedicalLabels(language.code);
 
   const [phase, setPhase] = useState<Phase>("preconsultation");
@@ -95,7 +98,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
   // Auto-scroll to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages, phase]);
+  }, [chatMessages, phase, keyboardHeight]);
 
   // Adjust container height when mobile keyboard opens/closes
   useEffect(() => {
@@ -471,7 +474,11 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
   const showInput = phase === "preconsultation" || phase === "followup";
 
   return (
-    <div ref={containerRef} className="flex flex-col h-[100dvh]">
+    <div
+      ref={containerRef}
+      className="flex flex-col h-[100dvh]"
+      style={{ paddingBottom: keyboardHeight > 0 ? `${keyboardHeight}px` : undefined }}
+    >
       {/* Header */}
       <div className="text-center py-4 border-b border-gray-100 shrink-0">
         <h1 className="text-xl font-bold text-gray-900">{labels.pageTitle}</h1>
@@ -611,20 +618,37 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
               </button>
             )}
 
-            <KeyboardTextarea
-              textareaRef={inputRef}
-              value={inputValue}
-              onValueChange={setInputValue}
-              onKeyDown={handleKeyDown}
-              placeholder={labels.chatInputPlaceholder}
-              lang={language.bcp47}
-              autoComplete="off"
-              autoCorrect="off"
-              dir={language.dir}
-              rows={1}
-              className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent resize-none text-gray-800 placeholder-gray-400 text-lg"
-              style={{ minHeight: "48px", maxHeight: "120px" }}
-            />
+            {IME_LANGUAGES.has(language.code) ? (
+              <textarea
+                ref={inputRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={labels.chatInputPlaceholder}
+                lang={language.bcp47}
+                autoComplete="off"
+                autoCorrect="off"
+                dir={language.dir}
+                rows={1}
+                className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent resize-none text-gray-800 placeholder-gray-400 text-lg"
+                style={{ minHeight: "48px", maxHeight: "120px" }}
+              />
+            ) : (
+              <KeyboardTextarea
+                textareaRef={inputRef}
+                value={inputValue}
+                onValueChange={setInputValue}
+                onKeyDown={handleKeyDown}
+                placeholder={labels.chatInputPlaceholder}
+                lang={language.bcp47}
+                autoComplete="off"
+                autoCorrect="off"
+                dir={language.dir}
+                rows={1}
+                className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent resize-none text-gray-800 placeholder-gray-400 text-lg"
+                style={{ minHeight: "48px", maxHeight: "120px" }}
+              />
+            )}
 
             {canUseVoice && (
               <MicrophoneButton

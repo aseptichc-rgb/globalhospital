@@ -26,7 +26,10 @@ export default function VirtualKeyboard() {
     activeSetValue,
     languageCode,
     dir,
+    setKeyboardHeight,
   } = useKeyboardContext();
+
+  const containerElRef = useRef<HTMLDivElement | null>(null);
 
   const [layoutData, setLayoutData] = useState<Record<string, unknown> | null>(
     null,
@@ -84,12 +87,21 @@ export default function VirtualKeyboard() {
     }
   });
 
+  // Report keyboard height to context when visible
+  useEffect(() => {
+    if (isVisible && containerElRef.current) {
+      const h = containerElRef.current.getBoundingClientRect().height;
+      setKeyboardHeight(h);
+    }
+  }, [isVisible, layoutData, setKeyboardHeight]);
+
   const isRtl = RTL_LANGUAGES.has(languageCode);
 
   if (!layoutData) return null;
 
   return (
     <div
+      ref={containerElRef}
       className={`keyboard-container ${isVisible ? "keyboard-visible" : ""}`}
       onMouseDown={(e) => e.preventDefault()}
       onTouchStart={(e) => e.preventDefault()}
