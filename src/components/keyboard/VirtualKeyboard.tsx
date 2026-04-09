@@ -51,8 +51,12 @@ export default function VirtualKeyboard() {
     };
   }, [languageCode]);
 
+  // Track whether the change originated from the virtual keyboard
+  const fromKeyboardRef = useRef(false);
+
   const onChange = useCallback(
     (input: string) => {
+      fromKeyboardRef.current = true;
       if (activeSetValue.current) {
         activeSetValue.current(input);
       }
@@ -80,7 +84,12 @@ export default function VirtualKeyboard() {
   );
 
   // Sync keyboard input with textarea value when it changes externally
+  // (e.g. voice input, clearing after send) — skip if change came from keyboard itself
   useEffect(() => {
+    if (fromKeyboardRef.current) {
+      fromKeyboardRef.current = false;
+      return;
+    }
     if (keyboardRef.current && activeInputRef.current) {
       const currentVal = activeInputRef.current.value;
       keyboardRef.current.setInput(currentVal);
