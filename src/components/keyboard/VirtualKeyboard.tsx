@@ -27,6 +27,7 @@ export default function VirtualKeyboard() {
     languageCode,
     dir,
     setKeyboardHeight,
+    inputRevision,
   } = useKeyboardContext();
 
   const containerElRef = useRef<HTMLDivElement | null>(null);
@@ -82,7 +83,9 @@ export default function VirtualKeyboard() {
   );
 
   // Sync keyboard buffer with textarea value ONLY when they differ
-  // (handles external changes like voice input or clearing after send)
+  // (handles external changes like voice input or clearing after send).
+  // Re-runs whenever the active textarea reports a value change via
+  // `inputRevision`, so the buffer never drifts behind the textarea.
   useEffect(() => {
     if (!keyboardRef.current || !activeInputRef.current) return;
     const textareaVal = activeInputRef.current.value;
@@ -90,7 +93,7 @@ export default function VirtualKeyboard() {
       lastKnownValue.current = textareaVal;
       keyboardRef.current.setInput(textareaVal);
     }
-  });
+  }, [inputRevision, activeInputRef]);
 
   // Report keyboard height to context when visible
   useEffect(() => {

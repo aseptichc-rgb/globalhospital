@@ -339,30 +339,63 @@ export default function InterpretationChat({
           </div>
         )}
 
-        {chatMessages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${
-              msg.speaker === "doctor" ? "justify-start" : "justify-end"
-            }`}
-          >
+        {chatMessages.map((msg) => {
+          // The non-Korean rendering of the message: doctor messages are
+          // translated INTO the patient's language, patient messages were
+          // already SPOKEN in the patient's language. In both cases the
+          // patient-language string is the one we want to read aloud.
+          const patientLangText =
+            msg.speaker === "doctor" ? msg.translatedText : msg.originalText;
+          return (
             <div
-              className={`max-w-[80%] rounded-2xl p-4 ${
-                msg.speaker === "doctor"
-                  ? "bg-doctor rounded-tl-sm"
-                  : "bg-patient rounded-tr-sm"
+              key={msg.id}
+              className={`flex ${
+                msg.speaker === "doctor" ? "justify-start" : "justify-end"
               }`}
             >
-              <p className="text-sm font-semibold mb-1 text-gray-500">
-                {msg.speaker === "doctor" ? "Doctor 의사" : `Patient 환자`}
-              </p>
-              <p className="text-xl text-gray-900 font-medium leading-relaxed">{msg.originalText}</p>
-              <p className="text-lg text-gray-600 mt-2 pt-2 border-t border-gray-200 leading-relaxed">
-                → {msg.translatedText}
-              </p>
+              <div
+                className={`max-w-[80%] rounded-2xl p-4 ${
+                  msg.speaker === "doctor"
+                    ? "bg-doctor rounded-tl-sm"
+                    : "bg-patient rounded-tr-sm"
+                }`}
+              >
+                <p className="text-sm font-semibold mb-1 text-gray-500">
+                  {msg.speaker === "doctor" ? "Doctor 의사" : `Patient 환자`}
+                </p>
+                <p className="text-xl text-gray-900 font-medium leading-relaxed">
+                  {msg.originalText}
+                </p>
+                <p className="text-lg text-gray-600 mt-2 pt-2 border-t border-gray-200 leading-relaxed">
+                  → {msg.translatedText}
+                </p>
+                {patientLangText && (
+                  <button
+                    type="button"
+                    onClick={() => doctorTTS.speak(patientLangText)}
+                    aria-label="Read patient-language text aloud"
+                    className="mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-md text-sm text-gray-600 hover:text-primary hover:bg-white/60 transition-colors"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+                      />
+                    </svg>
+                    {language.nameInNative}
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {translating && (
           <div className="text-center text-base text-gray-400 animate-pulse">

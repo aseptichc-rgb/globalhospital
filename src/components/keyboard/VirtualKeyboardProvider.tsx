@@ -32,6 +32,15 @@ interface KeyboardContextValue {
   keyboardHeight: number;
   /** Set the keyboard height (called by VirtualKeyboard component) */
   setKeyboardHeight: (h: number) => void;
+  /**
+   * Monotonically-increasing counter that ticks every time the active
+   * textarea's controlled value changes (programmatically or via typing).
+   * VirtualKeyboard subscribes to it so it can re-sync its internal buffer
+   * when the input is cleared from outside (e.g. after sending a message).
+   */
+  inputRevision: number;
+  /** Bumps inputRevision — called by KeyboardTextarea on value change. */
+  notifyInputChanged: () => void;
 }
 
 const KeyboardContext = createContext<KeyboardContextValue | null>(null);
@@ -59,6 +68,7 @@ export default function VirtualKeyboardProvider({
 }: ProviderProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [inputRevision, setInputRevision] = useState(0);
   const activeInputRef = useRef<HTMLTextAreaElement | null>(null);
   const activeSetValue = useRef<((v: string) => void) | null>(null);
 
@@ -76,6 +86,10 @@ export default function VirtualKeyboardProvider({
     [],
   );
 
+  const notifyInputChanged = useCallback(() => {
+    setInputRevision((r) => r + 1);
+  }, []);
+
   return (
     <KeyboardContext.Provider
       value={{
@@ -89,6 +103,8 @@ export default function VirtualKeyboardProvider({
         dir,
         keyboardHeight,
         setKeyboardHeight,
+        inputRevision,
+        notifyInputChanged,
       }}
     >
       {children}

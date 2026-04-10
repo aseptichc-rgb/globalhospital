@@ -126,11 +126,18 @@ export default function FollowUpQuestions({ language }: FollowUpQuestionsProps) 
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, isComplete]);
 
-  // Handle voice transcript
+  // Forward ref so the transcript effect can call sendAnswer without
+  // depending on its identity (which would cause re-runs on every render).
+  const sendAnswerRef = useRef<((text: string) => void) | null>(null);
+
+  // Handle voice transcript: fill the input AND auto-submit. Voice answers
+  // are committed only once Gemini returns the final transcript, so there's
+  // no need to make the user tap the send button.
   useEffect(() => {
     if (transcript && transcript !== prevTranscriptRef.current) {
       prevTranscriptRef.current = transcript;
       setInputValue(transcript);
+      sendAnswerRef.current?.(transcript);
     }
   }, [transcript]);
 
@@ -192,27 +199,47 @@ export default function FollowUpQuestions({ language }: FollowUpQuestionsProps) 
     [followUpQuestions, labels.followUpCompleteMessage]
   );
 
-  const handleSend = useCallback(async () => {
-    const text = inputValue.trim();
-    if (!text || currentStep >= followUpQuestions.length || isTranslating) return;
+  const sendAnswer = useCallback(
+    async (rawText: string) => {
+      const text = rawText.trim();
+      if (!text || currentStep >= followUpQuestions.length || isTranslating)
+        return;
 
-    // Add user message
-    setChatMessages((prev) => [...prev, { type: "user", text }]);
-    setInputValue("");
-    prevTranscriptRef.current = "";
-    resetTranscript();
+      // Add user message
+      setChatMessages((prev) => [...prev, { type: "user", text }]);
+      setInputValue("");
+      prevTranscriptRef.current = "";
+      resetTranscript();
 
-    // Translate
-    setIsTranslating(true);
-    const korean = await translateAnswer(text);
-    setIsTranslating(false);
+      // Translate
+      setIsTranslating(true);
+      const korean = await translateAnswer(text);
+      setIsTranslating(false);
 
-    // Save answer
-    updateFollowUpAnswer(currentStep, { original: text, korean });
+      // Save answer
+      updateFollowUpAnswer(currentStep, { original: text, korean });
 
+      advanceToNext(currentStep);
+    },
+    [
+      currentStep,
+      followUpQuestions.length,
+      isTranslating,
+      resetTranscript,
+      translateAnswer,
+      updateFollowUpAnswer,
+      advanceToNext,
+    ]
+  );
 
-    advanceToNext(currentStep);
-  }, [inputValue, currentStep, followUpQuestions.length, isTranslating, resetTranscript, translateAnswer, updateFollowUpAnswer, advanceToNext]);
+  // Keep the ref pointing at the latest sendAnswer for the transcript effect.
+  useEffect(() => {
+    sendAnswerRef.current = sendAnswer;
+  }, [sendAnswer]);
+
+  const handleSend = useCallback(() => {
+    sendAnswer(inputValue);
+  }, [sendAnswer, inputValue]);
 
   const handleSkip = useCallback(() => {
     if (currentStep >= followUpQuestions.length || isTranslating) return;

@@ -28,8 +28,14 @@ export default function KeyboardTextarea({
   onBlur,
   ...rest
 }: KeyboardTextareaProps) {
-  const { show, hide, registerInput, isVisible, languageCode } =
-    useKeyboardContext();
+  const {
+    show,
+    hide,
+    registerInput,
+    isVisible,
+    languageCode,
+    notifyInputChanged,
+  } = useKeyboardContext();
   const internalRef = useRef<HTMLTextAreaElement | null>(null);
   const ref = textareaRef ?? internalRef;
 
@@ -50,11 +56,15 @@ export default function KeyboardTextarea({
     [registerInput, ref, onValueChange, show, onFocus, useNativeKeyboard],
   );
 
-  // Sync keyboard internal buffer whenever our value changes
-  // (e.g. voice input, clearing after send)
+  // Whenever the controlled value changes (typing, voice input, parent
+  // clearing after send) tell the provider so that VirtualKeyboard can
+  // re-run its sync effect and update its internal buffer. Without this,
+  // the keyboard buffer drifts away from the textarea and subsequent
+  // keystrokes append onto a stale value.
   useEffect(() => {
-    // The keyboard syncs via the VirtualKeyboard component's useEffect
-  }, [value]);
+    if (useNativeKeyboard) return;
+    notifyInputChanged();
+  }, [value, useNativeKeyboard, notifyInputChanged]);
 
   // Assign ref
   const setRef = useCallback(
