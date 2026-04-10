@@ -74,7 +74,11 @@ export function useSpeechRecognition(
 
   const sendToGemini = useCallback(
     async (blob: Blob) => {
-      if (blob.size === 0) return;
+      if (blob.size === 0) {
+        // Nothing to upload — clear the processing latch that stopListening set.
+        setIsProcessing(false);
+        return;
+      }
 
       setIsProcessing(true);
       setError(null);
@@ -123,9 +127,15 @@ export function useSpeechRecognition(
   const stopListening = useCallback(() => {
     cleanupSilenceDetection();
 
-    // Stop MediaRecorder - this triggers onstop which sends to Gemini
-    if (mediaRecorderRef.current?.state === "recording") {
-      mediaRecorderRef.current.stop();
+    // Latch into "processing" BEFORE flipping isListening so that consumers
+    // (e.g. live-mode auto-rearm in InterpretationChat) don't see a window
+    // where !isListening && !isProcessing && transcript === "" and decide to
+    // throw away the audio that recorder.onstop is about to dispatch.
+    const wasRecording =
+      mediaRecorderRef.current?.state === "recording";
+    if (wasRecording) {
+      setIsProcessing(true);
+      mediaRecorderRef.current!.stop();
     }
 
     // Stop microphone stream

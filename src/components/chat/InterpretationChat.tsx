@@ -24,6 +24,41 @@ export default function InterpretationChat({
   const [liveMode, setLiveMode] = useState(false);
   const liveModeRef = useRef(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const prevMessageCountRef = useRef(chatMessages.length);
+
+  // Short notification beep generated via Web Audio API (no asset file needed)
+  const playNotificationSound = useCallback(() => {
+    try {
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.26);
+      osc.onended = () => ctx.close();
+    } catch (e) {
+      console.error("Notification sound error:", e);
+    }
+  }, []);
+
+  // Play a beep whenever a new translated message is appended to the chat
+  useEffect(() => {
+    if (chatMessages.length > prevMessageCountRef.current) {
+      playNotificationSound();
+    }
+    prevMessageCountRef.current = chatMessages.length;
+  }, [chatMessages.length, playNotificationSound]);
 
   // Doctor side (Korean)
   const doctorSTT = useSpeechRecognition("ko-KR");
@@ -65,7 +100,16 @@ export default function InterpretationChat({
             patientLang: language.geminiLangName,
           }),
         });
+        if (!res.ok) {
+          // fetch() does not throw on HTTP 4xx/5xx — convert to a thrown
+          // error so the catch branch (which handles live-mode auto-rearm)
+          // actually runs instead of silently dropping in an empty bubble.
+          throw new Error(`Translate API error: ${res.status}`);
+        }
         const data = await res.json();
+        if (!data.translatedText) {
+          throw new Error("Empty translation response");
+        }
 
         const message: ChatMessage = {
           id: Date.now().toString(),
