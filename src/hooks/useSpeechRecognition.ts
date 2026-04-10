@@ -3,8 +3,8 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 
 // Silence detection config
-const SILENCE_THRESHOLD = 15; // RMS volume below this = silence (0-128 scale)
-const SILENCE_DURATION_MS = 2000; // 2 seconds of silence to auto-stop
+const SILENCE_THRESHOLD = 20; // RMS volume below this = silence (0-128 scale)
+const SILENCE_DURATION_MS = 1800; // ~1.8s of silence to auto-stop
 const MIN_RECORDING_MS = 500; // minimum recording time before auto-stop kicks in
 
 interface UseSpeechRecognitionReturn {
@@ -143,6 +143,18 @@ export function useSpeechRecognition(
       return;
     }
 
+    // Re-entrancy guard: ignore if a recorder is already active for this hook
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
+      return;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+
     setError(null);
     setTranscript("");
     chunksRef.current = [];
@@ -150,7 +162,13 @@ export function useSpeechRecognition(
 
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
     } catch (err) {
       const permErr = err as DOMException;
       if (permErr.name === "NotAllowedError") {

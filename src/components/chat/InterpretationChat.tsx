@@ -31,7 +31,6 @@ export default function InterpretationChat({
 
   // Patient side (selected language)
   const patientSTT = useSpeechRecognition(language.bcp47);
-  const patientTTS = useSpeechSynthesis("ko-KR");
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -81,10 +80,12 @@ export default function InterpretationChat({
         addChatMessage(message);
         setTranslating(false);
 
-        // Wait for TTS playback to finish before re-opening the mic so we don't capture our own audio
-        if (data.translatedText) {
-          const tts = speaker === "doctor" ? doctorTTS : patientTTS;
-          await tts.speak(data.translatedText);
+        // Wait for TTS playback to finish before re-opening the mic so we don't capture our own audio.
+        // Korean translation (directed at the doctor) is shown on screen only — no TTS.
+        if (data.translatedText && speaker === "doctor") {
+          await doctorTTS.speak(data.translatedText);
+          // Extra buffer for TTS audio tail / acoustic echo on mobile speakers
+          await new Promise((r) => setTimeout(r, 600));
         }
 
         // In live mode, automatically hand the turn to the other side
@@ -96,11 +97,13 @@ export default function InterpretationChat({
         console.error("Translation error:", err);
         setTranslating(false);
         if (liveModeRef.current) {
+          // Brief pause before retrying so we don't hammer the API on repeat errors
+          await new Promise((r) => setTimeout(r, 800));
           startSideRef.current?.(speaker);
         }
       }
     },
-    [language.geminiLangName, language.bcp47, addChatMessage, doctorTTS, patientTTS]
+    [language.geminiLangName, language.bcp47, addChatMessage, doctorTTS]
   );
 
   // When doctor side finishes (manual stop or silence auto-stop), translate
@@ -147,14 +150,20 @@ export default function InterpretationChat({
         patientSTT.stopListening();
         doctorSTT.resetTranscript();
         pendingSideRef.current = "doctor";
-        doctorSTT.startListening();
         setActiveSide("doctor");
+        // Yield a tick so the previous recorder/stream finishes tearing down
+        // before we acquire a new microphone stream on the same device.
+        setTimeout(() => {
+          if (pendingSideRef.current === "doctor") doctorSTT.startListening();
+        }, 150);
       } else {
         doctorSTT.stopListening();
         patientSTT.resetTranscript();
         pendingSideRef.current = "patient";
-        patientSTT.startListening();
         setActiveSide("patient");
+        setTimeout(() => {
+          if (pendingSideRef.current === "patient") patientSTT.startListening();
+        }, 150);
       }
     },
     [doctorSTT, patientSTT]
@@ -200,11 +209,10 @@ export default function InterpretationChat({
       doctorSTT.stopListening();
       patientSTT.stopListening();
       doctorTTS.cancel();
-      patientTTS.cancel();
       pendingSideRef.current = null;
       setActiveSide(null);
     }
-  }, [liveMode, doctorSTT, patientSTT, doctorTTS, patientTTS, startSide]);
+  }, [liveMode, doctorSTT, patientSTT, doctorTTS, startSide]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)]">
