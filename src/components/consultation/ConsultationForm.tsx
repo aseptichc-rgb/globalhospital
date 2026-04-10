@@ -464,6 +464,12 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
     router.push(`/${language.code}/summary`);
   };
 
+  const handleSkipToChat = useCallback(() => {
+    if (isListening) stopListening();
+    cancelSpeech();
+    router.push(`/${language.code}/chat`);
+  }, [isListening, stopListening, cancelSpeech, router, language.code]);
+
   const canUseVoice = language.speechSupported && isSupported;
 
   // Determine if skip is allowed for current question
@@ -479,9 +485,20 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
       style={{ paddingBottom: keyboardHeight > 0 ? `${keyboardHeight}px` : undefined }}
     >
       {/* Header */}
-      <div className="text-center py-4 border-b border-gray-100 shrink-0">
+      <div className="relative text-center py-4 border-b border-gray-100 shrink-0">
         <h1 className="text-xl font-bold text-gray-900">{labels.pageTitle}</h1>
         <p className="text-xs text-gray-500 mt-1">{labels.voiceInputHint}</p>
+        <button
+          onClick={handleSkipToChat}
+          aria-label="바로 진료 통역으로"
+          title="문진 건너뛰고 바로 진료 통역"
+          className="absolute top-1/2 right-3 -translate-y-1/2 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 text-xs font-semibold shadow-sm hover:border-primary-light hover:bg-blue-50 hover:text-primary transition-colors"
+        >
+          <span className="hidden sm:inline">바로 진료 통역</span>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+          </svg>
+        </button>
       </div>
 
       {/* Chat Messages Area */}
