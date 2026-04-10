@@ -15,8 +15,31 @@ interface InterpretationChatProps {
 export default function InterpretationChat({
   language,
 }: InterpretationChatProps) {
-  const { chatMessages, addChatMessage, formData, followUpQuestions, followUpAnswers } =
-    useConsultationStore();
+  const {
+    chatMessages: storedChatMessages,
+    addChatMessage,
+    clearChatMessages,
+    formData,
+    followUpQuestions,
+    followUpAnswers,
+    languageCode: storedLanguageCode,
+    setLanguage,
+  } = useConsultationStore();
+
+  // If we're entering interpretation for a different language than the
+  // last session (or skip-intake jumped straight here without ever setting
+  // the language), the persisted chatMessages belong to a previous session
+  // and should not be shown. Mask them locally until the effect below has
+  // synced the store, so the stale bubbles never paint.
+  const languageMatches = storedLanguageCode === language.code;
+  const chatMessages = languageMatches ? storedChatMessages : [];
+
+  useEffect(() => {
+    if (storedLanguageCode !== language.code) {
+      clearChatMessages();
+      setLanguage(language.code);
+    }
+  }, [storedLanguageCode, language.code, clearChatMessages, setLanguage]);
 
   const [activeSide, setActiveSide] = useState<"doctor" | "patient" | null>(null);
   const [translating, setTranslating] = useState(false);

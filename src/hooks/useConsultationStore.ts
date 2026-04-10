@@ -21,6 +21,7 @@ interface ConsultationState {
   updateFollowUpAnswer: (index: number, answer: BilingualField) => void;
   setSessionId: (id: string) => void;
   addChatMessage: (message: ChatMessage) => void;
+  clearChatMessages: () => void;
   reset: () => void;
 }
 
@@ -72,6 +73,8 @@ export const useConsultationStore = create<ConsultationState>()(
         set((state) => ({
           chatMessages: [...state.chatMessages, message],
         })),
+
+      clearChatMessages: () => set({ chatMessages: [] }),
 
       reset: () =>
         set({
