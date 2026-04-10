@@ -5,7 +5,7 @@ import Keyboard from "react-simple-keyboard";
 import "react-simple-keyboard/build/css/index.css";
 import "./keyboardTheme.css";
 import { useKeyboardContext } from "./VirtualKeyboardProvider";
-import { loadLayout } from "./keyboardLayouts";
+import { loadLayout, IME_LANGUAGES } from "./keyboardLayouts";
 
 const RTL_LANGUAGES = new Set(["ar", "fa", "he", "ur"]);
 
@@ -101,6 +101,9 @@ export default function VirtualKeyboard() {
   }, [isVisible, layoutData, setKeyboardHeight]);
 
   const isRtl = RTL_LANGUAGES.has(languageCode);
+
+  // IME languages (Chinese) use the OS native keyboard for composition.
+  if (IME_LANGUAGES.has(languageCode)) return null;
 
   if (!layoutData) return null;
 
