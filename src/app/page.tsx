@@ -7,11 +7,12 @@ import OtherLanguageModal from "@/components/language-selection/OtherLanguageMod
 
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
+  const [skipIntake, setSkipIntake] = useState(false);
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
       {/* Header */}
-      <div className="text-center mb-12">
+      <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-20 h-20 bg-primary rounded-2xl mb-6">
           <svg
             className="w-12 h-12 text-white"
@@ -38,10 +39,33 @@ export default function Home() {
         </p>
       </div>
 
+      {/* Skip Intake Toggle */}
+      <button
+        onClick={() => setSkipIntake((v) => !v)}
+        aria-pressed={skipIntake}
+        className={`mb-6 inline-flex items-center gap-2 px-5 py-3 rounded-xl border-2 font-semibold text-base transition-all shadow-sm ${
+          skipIntake
+            ? "bg-primary text-white border-primary hover:bg-primary/90"
+            : "bg-white text-gray-700 border-gray-200 hover:border-primary-light hover:bg-blue-50"
+        }`}
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M13 5l7 7-7 7M5 5l7 7-7 7"
+          />
+        </svg>
+        {skipIntake
+          ? "문진 건너뛰기: 켜짐 — 언어 선택 시 바로 진료 통역"
+          : "문진 건너뛰고 바로 진료 통역"}
+      </button>
+
       {/* Flag Grid */}
       <div className="grid grid-cols-3 md:grid-cols-5 gap-4 max-w-4xl w-full">
         {LANGUAGES.map((lang) => (
-          <FlagCard key={lang.code} language={lang} />
+          <FlagCard key={lang.code} language={lang} skipIntake={skipIntake} />
         ))}
 
         {/* Other Language Button */}
@@ -83,6 +107,7 @@ export default function Home() {
       <OtherLanguageModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
+        skipIntake={skipIntake}
       />
     </main>
   );

@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 
 interface UseSpeechSynthesisReturn {
-  speak: (text: string) => void;
+  speak: (text: string) => Promise<void>;
   cancel: () => void;
   isSpeaking: boolean;
 }
@@ -13,27 +13,38 @@ export function useSpeechSynthesis(lang: string): UseSpeechSynthesisReturn {
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const speak = useCallback(
-    (text: string) => {
-      if (typeof window === "undefined" || !window.speechSynthesis) return;
+    (text: string): Promise<void> => {
+      return new Promise((resolve) => {
+        if (typeof window === "undefined" || !window.speechSynthesis) {
+          resolve();
+          return;
+        }
 
-      window.speechSynthesis.cancel();
+        window.speechSynthesis.cancel();
 
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang;
-      utterance.rate = 0.9;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang;
+        utterance.rate = 0.9;
 
-      const voices = window.speechSynthesis.getVoices();
-      const matchedVoice = voices.find((v) => v.lang.startsWith(lang.split("-")[0]));
-      if (matchedVoice) {
-        utterance.voice = matchedVoice;
-      }
+        const voices = window.speechSynthesis.getVoices();
+        const matchedVoice = voices.find((v) => v.lang.startsWith(lang.split("-")[0]));
+        if (matchedVoice) {
+          utterance.voice = matchedVoice;
+        }
 
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => {
+          setIsSpeaking(false);
+          resolve();
+        };
+        utterance.onerror = () => {
+          setIsSpeaking(false);
+          resolve();
+        };
 
-      utteranceRef.current = utterance;
-      window.speechSynthesis.speak(utterance);
+        utteranceRef.current = utterance;
+        window.speechSynthesis.speak(utterance);
+      });
     },
     [lang]
   );

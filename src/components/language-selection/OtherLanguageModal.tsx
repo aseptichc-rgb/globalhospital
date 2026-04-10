@@ -8,9 +8,10 @@ import FlagImage from "@/components/ui/FlagImage";
 interface OtherLanguageModalProps {
   isOpen: boolean;
   onClose: () => void;
+  skipIntake?: boolean;
 }
 
-export default function OtherLanguageModal({ isOpen, onClose }: OtherLanguageModalProps) {
+export default function OtherLanguageModal({ isOpen, onClose, skipIntake = false }: OtherLanguageModalProps) {
   const [search, setSearch] = useState("");
   const router = useRouter();
 
@@ -27,7 +28,7 @@ export default function OtherLanguageModal({ isOpen, onClose }: OtherLanguageMod
 
   const handleSelect = (code: string) => {
     onClose();
-    router.push(`/${code}`);
+    router.push(skipIntake ? `/${code}/chat` : `/${code}`);
   };
 
   return (

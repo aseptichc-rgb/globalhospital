@@ -21,6 +21,8 @@ export default function InterpretationChat({
   const [activeSide, setActiveSide] = useState<"doctor" | "patient" | null>(null);
   const [translating, setTranslating] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const [liveMode, setLiveMode] = useState(false);
+  const liveModeRef = useRef(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Doctor side (Korean)
@@ -35,12 +37,22 @@ export default function InterpretationChat({
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
+  // Tracks which side is currently being listened to (set on start, cleared on translate)
+  const pendingSideRef = useRef<"doctor" | "patient" | null>(null);
+  // Forward ref so translateAndAdd can call startSide without circular deps
+  const startSideRef = useRef<((side: "doctor" | "patient") => void) | null>(null);
+
   const translateAndAdd = useCallback(
     async (
       text: string,
       speaker: "doctor" | "patient"
     ) => {
-      if (!text.trim()) return;
+      if (!text.trim()) {
+        if (liveModeRef.current) {
+          startSideRef.current?.(speaker);
+        }
+        return;
+      }
 
       setTranslating(true);
       try {
@@ -67,38 +79,47 @@ export default function InterpretationChat({
         };
 
         addChatMessage(message);
+        setTranslating(false);
 
-        // Auto-play TTS on the other side
+        // Wait for TTS playback to finish before re-opening the mic so we don't capture our own audio
         if (data.translatedText) {
-          if (speaker === "doctor") {
-            doctorTTS.speak(data.translatedText);
-          } else {
-            patientTTS.speak(data.translatedText);
-          }
+          const tts = speaker === "doctor" ? doctorTTS : patientTTS;
+          await tts.speak(data.translatedText);
+        }
+
+        // In live mode, automatically hand the turn to the other side
+        if (liveModeRef.current) {
+          const next = speaker === "doctor" ? "patient" : "doctor";
+          startSideRef.current?.(next);
         }
       } catch (err) {
         console.error("Translation error:", err);
-      } finally {
         setTranslating(false);
+        if (liveModeRef.current) {
+          startSideRef.current?.(speaker);
+        }
       }
     },
     [language.geminiLangName, language.bcp47, addChatMessage, doctorTTS, patientTTS]
   );
 
-  // Track which side just stopped to send transcript after Gemini processing
-  const pendingSideRef = useRef<"doctor" | "patient" | null>(null);
-
-  // When transcript updates after stopping, send for translation
+  // When doctor side finishes (manual stop or silence auto-stop), translate
   useEffect(() => {
     if (
       pendingSideRef.current === "doctor" &&
       !doctorSTT.isListening &&
-      !doctorSTT.isProcessing &&
-      doctorSTT.transcript
+      !doctorSTT.isProcessing
     ) {
-      translateAndAdd(doctorSTT.transcript, "doctor");
-      doctorSTT.resetTranscript();
-      pendingSideRef.current = null;
+      if (doctorSTT.transcript) {
+        const text = doctorSTT.transcript;
+        pendingSideRef.current = null;
+        doctorSTT.resetTranscript();
+        translateAndAdd(text, "doctor");
+      } else if (liveModeRef.current) {
+        // No speech captured — re-arm same side in live mode
+        pendingSideRef.current = null;
+        startSideRef.current?.("doctor");
+      }
     }
   }, [doctorSTT.transcript, doctorSTT.isListening, doctorSTT.isProcessing, translateAndAdd, doctorSTT]);
 
@@ -106,50 +127,113 @@ export default function InterpretationChat({
     if (
       pendingSideRef.current === "patient" &&
       !patientSTT.isListening &&
-      !patientSTT.isProcessing &&
-      patientSTT.transcript
+      !patientSTT.isProcessing
     ) {
-      translateAndAdd(patientSTT.transcript, "patient");
-      patientSTT.resetTranscript();
-      pendingSideRef.current = null;
+      if (patientSTT.transcript) {
+        const text = patientSTT.transcript;
+        pendingSideRef.current = null;
+        patientSTT.resetTranscript();
+        translateAndAdd(text, "patient");
+      } else if (liveModeRef.current) {
+        pendingSideRef.current = null;
+        startSideRef.current?.("patient");
+      }
     }
   }, [patientSTT.transcript, patientSTT.isListening, patientSTT.isProcessing, translateAndAdd, patientSTT]);
 
+  const startSide = useCallback(
+    (side: "doctor" | "patient") => {
+      if (side === "doctor") {
+        patientSTT.stopListening();
+        doctorSTT.resetTranscript();
+        pendingSideRef.current = "doctor";
+        doctorSTT.startListening();
+        setActiveSide("doctor");
+      } else {
+        doctorSTT.stopListening();
+        patientSTT.resetTranscript();
+        pendingSideRef.current = "patient";
+        patientSTT.startListening();
+        setActiveSide("patient");
+      }
+    },
+    [doctorSTT, patientSTT]
+  );
+
+  useEffect(() => {
+    startSideRef.current = startSide;
+  }, [startSide]);
+
   const handleDoctorMic = useCallback(() => {
+    if (liveMode) {
+      if (activeSide !== "doctor") startSide("doctor");
+      return;
+    }
     if (activeSide === "doctor") {
       doctorSTT.stopListening();
       setActiveSide(null);
-      pendingSideRef.current = "doctor";
     } else {
-      patientSTT.stopListening();
-      doctorSTT.resetTranscript();
-      doctorSTT.startListening();
-      setActiveSide("doctor");
+      startSide("doctor");
     }
-  }, [activeSide, doctorSTT, patientSTT]);
+  }, [liveMode, activeSide, doctorSTT, startSide]);
 
   const handlePatientMic = useCallback(() => {
+    if (liveMode) {
+      if (activeSide !== "patient") startSide("patient");
+      return;
+    }
     if (activeSide === "patient") {
       patientSTT.stopListening();
       setActiveSide(null);
-      pendingSideRef.current = "patient";
+    } else {
+      startSide("patient");
+    }
+  }, [liveMode, activeSide, patientSTT, startSide]);
+
+  const handleLiveToggle = useCallback(() => {
+    const next = !liveMode;
+    liveModeRef.current = next;
+    setLiveMode(next);
+    if (next) {
+      startSide("doctor");
     } else {
       doctorSTT.stopListening();
-      patientSTT.resetTranscript();
-      patientSTT.startListening();
-      setActiveSide("patient");
+      patientSTT.stopListening();
+      doctorTTS.cancel();
+      patientTTS.cancel();
+      pendingSideRef.current = null;
+      setActiveSide(null);
     }
-  }, [activeSide, doctorSTT, patientSTT]);
+  }, [liveMode, doctorSTT, patientSTT, doctorTTS, patientTTS, startSide]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)]">
-      {/* Summary Toggle */}
-      <button
-        onClick={() => setShowSummary(!showSummary)}
-        className="mb-2 text-sm text-primary underline no-print"
-      >
-        {showSummary ? "Hide" : "Show"} Pre-Consultation Summary
-      </button>
+      {/* Top Bar: Summary Toggle + Live Mode Toggle */}
+      <div className="flex items-center justify-between gap-3 mb-3 no-print">
+        <button
+          onClick={() => setShowSummary(!showSummary)}
+          className="text-sm text-primary underline"
+        >
+          {showSummary ? "Hide" : "Show"} Pre-Consultation Summary
+        </button>
+
+        <button
+          onClick={handleLiveToggle}
+          aria-pressed={liveMode}
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-base border-2 transition-all shadow-sm ${
+            liveMode
+              ? "bg-red-500 text-white border-red-500 hover:bg-red-600"
+              : "bg-white text-gray-800 border-gray-300 hover:border-primary-light hover:bg-blue-50"
+          }`}
+        >
+          <span
+            className={`inline-block w-3 h-3 rounded-full ${
+              liveMode ? "bg-white animate-pulse" : "bg-red-500"
+            }`}
+          />
+          {liveMode ? "실시간 통역 끄기" : "실시간 통역 켜기"}
+        </button>
+      </div>
 
       {/* Collapsible Summary */}
       {showSummary && (
@@ -196,7 +280,7 @@ export default function InterpretationChat({
                 d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
               />
             </svg>
-            <p>Press the microphone button to start speaking</p>
+            <p>마이크 버튼을 눌러 말하거나, 위의 "실시간 통역 켜기"로 자동 통역을 시작하세요</p>
             <p className="text-sm mt-1">
               Doctor (Korean) | Patient ({language.nameInNative})
             </p>
