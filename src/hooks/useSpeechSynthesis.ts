@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 interface UseSpeechSynthesisReturn {
   speak: (text: string) => Promise<void>;
@@ -9,106 +9,99 @@ interface UseSpeechSynthesisReturn {
 }
 
 /**
- * Resolves with the browser's loaded voice list. On Chrome the list is
- * populated asynchronously, so getVoices() can return [] on the very first
- * call — this helper waits for the `voiceschanged` event in that case.
+ * Server-backed TTS using Gemini's multilingual neural voices.
+ * Replaces the old browser SpeechSynthesis path, which produced very uneven
+ * quality across languages depending on the OS-installed voice packs.
  */
-function loadVoices(): Promise<SpeechSynthesisVoice[]> {
-  return new Promise((resolve) => {
-    if (typeof window === "undefined" || !window.speechSynthesis) {
-      resolve([]);
-      return;
-    }
-    const synth = window.speechSynthesis;
-    const existing = synth.getVoices();
-    if (existing.length > 0) {
-      resolve(existing);
-      return;
-    }
-    let settled = false;
-    const handler = () => {
-      if (settled) return;
-      settled = true;
-      synth.removeEventListener("voiceschanged", handler);
-      resolve(synth.getVoices());
-    };
-    synth.addEventListener("voiceschanged", handler);
-    // Safety timeout — some browsers never fire the event if no extra voices
-    // exist beyond the defaults. Resolve with whatever's there after 1s.
-    setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      synth.removeEventListener("voiceschanged", handler);
-      resolve(synth.getVoices());
-    }, 1000);
-  });
-}
-
-function pickVoice(
-  voices: SpeechSynthesisVoice[],
-  lang: string,
-): SpeechSynthesisVoice | undefined {
-  if (voices.length === 0) return undefined;
-  const lower = lang.toLowerCase();
-  const base = lower.split("-")[0];
-  // 1) Exact match (e.g. zh-CN === zh-CN)
-  let match = voices.find((v) => v.lang.toLowerCase() === lower);
-  // 2) Same base language (e.g. zh-CN matches zh-TW or zh)
-  if (!match) match = voices.find((v) => v.lang.toLowerCase().startsWith(base));
-  // 3) Prefer non-default if multiple base matches (often higher quality)
-  return match;
-}
-
 export function useSpeechSynthesis(lang: string): UseSpeechSynthesisReturn {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const urlRef = useRef<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const resolveRef = useRef<(() => void) | null>(null);
+
+  const cleanup = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.onplay = null;
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (urlRef.current) {
+      URL.revokeObjectURL(urlRef.current);
+      urlRef.current = null;
+    }
+    setIsSpeaking(false);
+    if (resolveRef.current) {
+      const r = resolveRef.current;
+      resolveRef.current = null;
+      r();
+    }
+  }, []);
+
+  const cancel = useCallback(() => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
+    cleanup();
+  }, [cleanup]);
 
   const speak = useCallback(
     async (text: string): Promise<void> => {
-      if (typeof window === "undefined" || !window.speechSynthesis) return;
       if (!text.trim()) return;
 
-      // Cancel any in-flight utterance before starting a new one.
-      window.speechSynthesis.cancel();
+      // Cancel any in-flight speech before starting a new one.
+      cancel();
 
-      const voices = await loadVoices();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
-      return new Promise((resolve) => {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = lang;
-        utterance.rate = 0.9;
-
-        const voice = pickVoice(voices, lang);
-        if (voice) {
-          utterance.voice = voice;
-          // Some engines ignore utterance.lang when a voice is set, so
-          // mirror the voice's lang for safety.
-          utterance.lang = voice.lang;
+      let res: Response;
+      try {
+        res = await fetch("/api/gemini/text-to-speech", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, lang }),
+          signal: controller.signal,
+        });
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          console.error("[TTS] fetch failed:", err);
         }
+        return;
+      }
 
-        utterance.onstart = () => setIsSpeaking(true);
-        utterance.onend = () => {
-          setIsSpeaking(false);
-          resolve();
-        };
-        utterance.onerror = () => {
-          setIsSpeaking(false);
-          resolve();
-        };
+      if (controller.signal.aborted) return;
+      if (!res.ok) {
+        console.error("[TTS] API error:", res.status);
+        return;
+      }
 
-        utteranceRef.current = utterance;
-        window.speechSynthesis.speak(utterance);
+      const blob = await res.blob();
+      if (controller.signal.aborted) return;
+
+      const url = URL.createObjectURL(blob);
+      urlRef.current = url;
+
+      const audio = new Audio(url);
+      audioRef.current = audio;
+
+      return new Promise<void>((resolve) => {
+        resolveRef.current = resolve;
+        audio.onplay = () => setIsSpeaking(true);
+        audio.onended = cleanup;
+        audio.onerror = cleanup;
+        audio.play().catch(() => cleanup());
       });
     },
-    [lang]
+    [lang, cancel, cleanup]
   );
 
-  const cancel = useCallback(() => {
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    setIsSpeaking(false);
-  }, []);
+  useEffect(() => {
+    return () => cancel();
+  }, [cancel]);
 
   return { speak, cancel, isSpeaking };
 }

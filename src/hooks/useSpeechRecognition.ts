@@ -6,6 +6,10 @@ import { useState, useCallback, useRef, useEffect } from "react";
 const SILENCE_THRESHOLD = 20; // RMS volume below this = silence (0-128 scale)
 const SILENCE_DURATION_MS = 1800; // ~1.8s of silence to auto-stop
 const MIN_RECORDING_MS = 500; // minimum recording time before auto-stop kicks in
+// Hard cap: long recordings produce multi-MB webm blobs whose container
+// metadata MediaRecorder fails to finalize, which Gemini rejects as an
+// "invalid argument". Cut off any single turn at 60s.
+const MAX_RECORDING_MS = 60000;
 
 interface UseSpeechRecognitionReturn {
   transcript: string;
@@ -34,6 +38,9 @@ export function useSpeechRecognition(
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const maxDurationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const animFrameRef = useRef<number | null>(null);
   const recordingStartTimeRef = useRef<number>(0);
   const hasSpokeRef = useRef(false);
@@ -47,6 +54,10 @@ export function useSpeechRecognition(
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
+    }
+    if (maxDurationTimerRef.current) {
+      clearTimeout(maxDurationTimerRef.current);
+      maxDurationTimerRef.current = null;
     }
     if (animFrameRef.current) {
       cancelAnimationFrame(animFrameRef.current);
@@ -83,6 +94,9 @@ export function useSpeechRecognition(
       setIsProcessing(true);
       setError(null);
       try {
+        console.log(
+          `[STT client] sending blob size=${blob.size} type=${blob.type} lang=${lang}`
+        );
         // Convert blob to base64
         const buffer = await blob.arrayBuffer();
         const bytes = new Uint8Array(buffer);
@@ -225,6 +239,10 @@ export function useSpeechRecognition(
     recorder.start(250); // Record in 250ms chunks for reliable data capture
     recordingStartTimeRef.current = Date.now();
     setIsListening(true);
+
+    maxDurationTimerRef.current = setTimeout(() => {
+      stopListening();
+    }, MAX_RECORDING_MS);
 
     // Set up silence detection with Web Audio API
     const audioContext = new AudioContext();

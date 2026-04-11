@@ -74,14 +74,6 @@ export const VOICE_PREFERRED_LANGUAGES = new Set([
   "km", "lo", "am", "zh", "ja",
 ]);
 
-// Languages that require IME (Input Method Editor) for character composition —
-// these must use the native OS keyboard instead of the app's virtual keyboard.
-// Chinese needs Pinyin → Hanzi conversion which simple-keyboard cannot do, so
-// the virtual keyboard would only show alphabet keys with no way to produce
-// actual characters. ja/ko at least display their native scripts (kana / jamo)
-// on the virtual keyboard, so they remain on the in-app keyboard.
-export const IME_LANGUAGES = new Set(["zh"]);
-
 // Cache loaded layouts so we don't re-import
 const layoutCache = new Map<string, any>();
 

@@ -2,7 +2,6 @@
 
 import React, { useRef, useCallback, useEffect } from "react";
 import { useKeyboardContext } from "./VirtualKeyboardProvider";
-import { IME_LANGUAGES } from "./keyboardLayouts";
 
 type NativeTextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
@@ -33,27 +32,19 @@ export default function KeyboardTextarea({
     hide,
     registerInput,
     isVisible,
-    languageCode,
     notifyInputChanged,
   } = useKeyboardContext();
   const internalRef = useRef<HTMLTextAreaElement | null>(null);
   const ref = textareaRef ?? internalRef;
 
-  // CJK languages need an OS-level IME for character composition —
-  // the in-app virtual keyboard can't compose Pinyin/Kana/Hangul jamo,
-  // so fall back to the native OS keyboard for these.
-  const useNativeKeyboard = IME_LANGUAGES.has(languageCode);
-
   // When this textarea gains focus, register it with the provider
   const handleFocus = useCallback(
     (e: React.FocusEvent<HTMLTextAreaElement>) => {
-      if (!useNativeKeyboard) {
-        registerInput(ref.current, onValueChange);
-        show();
-      }
+      registerInput(ref.current, onValueChange);
+      show();
       onFocus?.(e);
     },
-    [registerInput, ref, onValueChange, show, onFocus, useNativeKeyboard],
+    [registerInput, ref, onValueChange, show, onFocus],
   );
 
   // Whenever the controlled value changes (typing, voice input, parent
@@ -62,9 +53,8 @@ export default function KeyboardTextarea({
   // the keyboard buffer drifts away from the textarea and subsequent
   // keystrokes append onto a stale value.
   useEffect(() => {
-    if (useNativeKeyboard) return;
     notifyInputChanged();
-  }, [value, useNativeKeyboard, notifyInputChanged]);
+  }, [value, notifyInputChanged]);
 
   // Assign ref
   const setRef = useCallback(
@@ -83,7 +73,7 @@ export default function KeyboardTextarea({
       value={value}
       onChange={(e) => onValueChange(e.target.value)}
       onFocus={handleFocus}
-      inputMode={useNativeKeyboard ? undefined : "none"}
+      inputMode="none"
       {...rest}
     />
   );
