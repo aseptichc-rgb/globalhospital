@@ -45,10 +45,14 @@ export function useSpeechRecognition(
   const recordingStartTimeRef = useRef<number>(0);
   const hasSpokeRef = useRef(false);
 
-  const isSupported =
-    typeof window !== "undefined" &&
-    typeof navigator !== "undefined" &&
-    !!navigator.mediaDevices?.getUserMedia;
+  const [isSupported, setIsSupported] = useState(false);
+
+  useEffect(() => {
+    setIsSupported(
+      typeof navigator !== "undefined" &&
+        !!navigator.mediaDevices?.getUserMedia
+    );
+  }, []);
 
   const cleanupSilenceDetection = useCallback(() => {
     if (silenceTimerRef.current) {

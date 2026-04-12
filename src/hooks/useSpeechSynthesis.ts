@@ -9,9 +9,9 @@ interface UseSpeechSynthesisReturn {
 }
 
 /**
- * Server-backed TTS using Gemini's multilingual neural voices.
- * Replaces the old browser SpeechSynthesis path, which produced very uneven
- * quality across languages depending on the OS-installed voice packs.
+ * Server-backed TTS using Gemini's multilingual neural voices, with automatic
+ * fallback to the browser's built-in SpeechSynthesis when the server returns
+ * an error (e.g. Gemini preview model doesn't support the language yet).
  */
 export function useSpeechSynthesis(lang: string): UseSpeechSynthesisReturn {
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -19,6 +19,7 @@ export function useSpeechSynthesis(lang: string): UseSpeechSynthesisReturn {
   const urlRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const resolveRef = useRef<(() => void) | null>(null);
+  const browserUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const cleanup = useCallback(() => {
     if (audioRef.current) {
@@ -31,6 +32,10 @@ export function useSpeechSynthesis(lang: string): UseSpeechSynthesisReturn {
     if (urlRef.current) {
       URL.revokeObjectURL(urlRef.current);
       urlRef.current = null;
+    }
+    if (browserUtteranceRef.current) {
+      window.speechSynthesis.cancel();
+      browserUtteranceRef.current = null;
     }
     setIsSpeaking(false);
     if (resolveRef.current) {
@@ -47,6 +52,22 @@ export function useSpeechSynthesis(lang: string): UseSpeechSynthesisReturn {
     }
     cleanup();
   }, [cleanup]);
+
+  const speakWithBrowserTTS = useCallback(
+    (text: string): Promise<void> => {
+      return new Promise<void>((resolve) => {
+        resolveRef.current = resolve;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang;
+        browserUtteranceRef.current = utterance;
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => cleanup();
+        utterance.onerror = () => cleanup();
+        window.speechSynthesis.speak(utterance);
+      });
+    },
+    [lang, cleanup]
+  );
 
   const speak = useCallback(
     async (text: string): Promise<void> => {
@@ -68,15 +89,16 @@ export function useSpeechSynthesis(lang: string): UseSpeechSynthesisReturn {
         });
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
-          console.error("[TTS] fetch failed:", err);
+          console.error("[TTS] fetch failed, falling back to browser TTS:", err);
+          return speakWithBrowserTTS(text);
         }
         return;
       }
 
       if (controller.signal.aborted) return;
       if (!res.ok) {
-        console.error("[TTS] API error:", res.status);
-        return;
+        console.warn("[TTS] API error:", res.status, "— falling back to browser TTS");
+        return speakWithBrowserTTS(text);
       }
 
       const blob = await res.blob();
@@ -96,7 +118,7 @@ export function useSpeechSynthesis(lang: string): UseSpeechSynthesisReturn {
         audio.play().catch(() => cleanup());
       });
     },
-    [lang, cancel, cleanup]
+    [lang, cancel, cleanup, speakWithBrowserTTS]
   );
 
   useEffect(() => {
