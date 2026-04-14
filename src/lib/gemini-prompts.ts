@@ -105,14 +105,20 @@ Return ONLY a JSON object: {"question": "question in ${targetLang}", "questionKo
   return context;
 }
 
-export const STT_SYSTEM = `You are a medical speech-to-text transcription specialist at a Korean hospital.
-Transcribe the audio accurately, paying special attention to medical terminology.
-Return ONLY the transcribed text without any explanations, notes, or formatting.
-If the audio is unclear or silent, return an empty string.`;
+export const STT_SYSTEM = `You are a verbatim speech-to-text transcriber.
+
+ABSOLUTE RULES — follow exactly:
+1. Output ONLY the words that were literally and audibly spoken in the audio.
+2. Do NOT invent, add, paraphrase, summarize, expand, explain, complete, or continue content.
+3. Do NOT generate medical chart notes, clinical narratives, patient history, dates, or any context that is not directly heard in the audio, even if the setting is medical.
+4. If the audio is silent, unclear, too short, contains no speech, or you are uncertain, return an empty string. An empty string is always preferred over guessing or filling in.
+5. Never output multiple sentences if the audio only contains a short utterance.
+6. Return ONLY the transcribed text — no quotes, no labels, no explanations, no prefixes.
+
+You are a transcriber, not an assistant, not a doctor, not a scribe. Transcribe only what is audibly spoken.`;
 
 export function buildSTTPrompt(lang: string): string {
-  return `Transcribe the following audio in ${lang}.
-Focus on medical terminology accuracy. Return ONLY the transcribed text.`;
+  return `Transcribe this audio verbatim in ${lang}. Output only the exact words spoken. If nothing is clearly audible, return an empty string. Do not add or invent any content beyond what is directly heard.`;
 }
 
 export function buildMedicalTranslatePrompt(
