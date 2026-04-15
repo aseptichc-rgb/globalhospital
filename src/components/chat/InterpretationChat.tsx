@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useConsultationStore } from "@/hooks/useConsultationStore";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
+import { useLiveInterpretation } from "@/hooks/useLiveInterpretation";
 import { LanguageConfig } from "@/types/language";
 import { ChatMessage } from "@/types/consultation";
 import MicrophoneButton from "@/components/ui/MicrophoneButton";
@@ -90,6 +91,17 @@ export default function InterpretationChat({
   // Patient side (selected language)
   const patientSTT = useSpeechRecognition(language.bcp47);
 
+  // Live-mode simultaneous interpreter (one hook per direction; only one is
+  // connected at a time via start()/stop()).
+  const doctorLive = useLiveInterpretation({
+    sourceLang: "Korean",
+    targetLang: language.geminiLangName,
+  });
+  const patientLive = useLiveInterpretation({
+    sourceLang: language.geminiLangName,
+    targetLang: "Korean",
+  });
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
@@ -175,6 +187,7 @@ export default function InterpretationChat({
 
   // When doctor side finishes (manual stop or silence auto-stop), translate
   useEffect(() => {
+    if (liveModeRef.current) return;
     if (
       pendingSideRef.current === "doctor" &&
       !doctorSTT.isListening &&
@@ -194,6 +207,7 @@ export default function InterpretationChat({
   }, [doctorSTT.transcript, doctorSTT.isListening, doctorSTT.isProcessing, translateAndAdd, doctorSTT]);
 
   useEffect(() => {
+    if (liveModeRef.current) return;
     if (
       pendingSideRef.current === "patient" &&
       !patientSTT.isListening &&
@@ -213,6 +227,25 @@ export default function InterpretationChat({
 
   const startSide = useCallback(
     (side: "doctor" | "patient") => {
+      if (liveModeRef.current) {
+        // Live mode: use streaming Gemini Live sessions.
+        if (side === "doctor") {
+          patientLive.stop();
+          pendingSideRef.current = "doctor";
+          setActiveSide("doctor");
+          setTimeout(() => {
+            if (pendingSideRef.current === "doctor") doctorLive.start();
+          }, 150);
+        } else {
+          doctorLive.stop();
+          pendingSideRef.current = "patient";
+          setActiveSide("patient");
+          setTimeout(() => {
+            if (pendingSideRef.current === "patient") patientLive.start();
+          }, 150);
+        }
+        return;
+      }
       if (side === "doctor") {
         patientSTT.stopListening();
         doctorSTT.resetTranscript();
@@ -233,12 +266,68 @@ export default function InterpretationChat({
         }, 150);
       }
     },
-    [doctorSTT, patientSTT]
+    [doctorSTT, patientSTT, doctorLive, patientLive]
   );
 
   useEffect(() => {
     startSideRef.current = startSide;
   }, [startSide]);
+
+  // React to finalized live segments from either side.
+  const handleLiveSegment = useCallback(
+    async (speaker: "doctor" | "patient", input: string, output: string) => {
+      const originalText = input.trim();
+      const translatedText = output.trim();
+      if (!originalText && !translatedText) {
+        if (liveModeRef.current) startSideRef.current?.(speaker);
+        return;
+      }
+
+      const message: ChatMessage = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        timestamp: new Date().toISOString(),
+        speaker,
+        originalText: originalText || translatedText,
+        translatedText: translatedText,
+        originalLang: speaker === "doctor" ? "ko-KR" : language.bcp47,
+        translatedLang: speaker === "doctor" ? language.bcp47 : "ko-KR",
+      };
+      addChatMessage(message);
+
+      if (speaker === "doctor" && translatedText) {
+        // Mute the active mic during TTS to avoid echo capture.
+        doctorLive.muteMic(true);
+        patientLive.muteMic(true);
+        await doctorTTS.speak(translatedText);
+        await new Promise((r) => setTimeout(r, 600));
+        doctorLive.muteMic(false);
+        patientLive.muteMic(false);
+      }
+
+      if (liveModeRef.current) {
+        const next = speaker === "doctor" ? "patient" : "doctor";
+        startSideRef.current?.(next);
+      }
+    },
+    [addChatMessage, doctorTTS, doctorLive, patientLive, language.bcp47]
+  );
+
+  useEffect(() => {
+    if (doctorLive.lastSegment) {
+      const seg = doctorLive.lastSegment;
+      handleLiveSegment("doctor", seg.inputTranscript, seg.outputTranslation);
+    }
+    // Only react when the segment id changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doctorLive.lastSegment?.id]);
+
+  useEffect(() => {
+    if (patientLive.lastSegment) {
+      const seg = patientLive.lastSegment;
+      handleLiveSegment("patient", seg.inputTranscript, seg.outputTranslation);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patientLive.lastSegment?.id]);
 
   const handleDoctorMic = useCallback(() => {
     if (liveMode) {
@@ -275,11 +364,13 @@ export default function InterpretationChat({
     } else {
       doctorSTT.stopListening();
       patientSTT.stopListening();
+      doctorLive.stop();
+      patientLive.stop();
       doctorTTS.cancel();
       pendingSideRef.current = null;
       setActiveSide(null);
     }
-  }, [liveMode, doctorSTT, patientSTT, doctorTTS, startSide]);
+  }, [liveMode, doctorSTT, patientSTT, doctorLive, patientLive, doctorTTS, startSide]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)]">
@@ -433,12 +524,30 @@ export default function InterpretationChat({
             }`}
           >
             <div className="max-w-[80%] rounded-2xl p-4 bg-yellow-50 border border-yellow-200">
-              <p className="text-sm text-yellow-600 mb-1">🎤 음성을 듣고 있습니다...</p>
-              <p className="text-lg text-gray-800">
-                {activeSide === "doctor"
-                  ? doctorSTT.transcript
-                  : patientSTT.transcript}
+              <p className="text-sm text-yellow-600 mb-1">
+                {liveMode ? "🎤 실시간 통역 중..." : "🎤 음성을 듣고 있습니다..."}
               </p>
+              {liveMode ? (
+                <>
+                  <p className="text-base text-gray-700">
+                    {activeSide === "doctor"
+                      ? doctorLive.partialInput
+                      : patientLive.partialInput}
+                  </p>
+                  <p className="text-lg text-gray-900 font-medium mt-1">
+                    →{" "}
+                    {activeSide === "doctor"
+                      ? doctorLive.partialOutput
+                      : patientLive.partialOutput}
+                  </p>
+                </>
+              ) : (
+                <p className="text-lg text-gray-800">
+                  {activeSide === "doctor"
+                    ? doctorSTT.transcript
+                    : patientSTT.transcript}
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -453,9 +562,9 @@ export default function InterpretationChat({
       </div>
 
       {/* Error Display */}
-      {(doctorSTT.error || patientSTT.error) && (
+      {(doctorSTT.error || patientSTT.error || doctorLive.error || patientLive.error) && (
         <div className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg mx-4">
-          ⚠️ {doctorSTT.error || patientSTT.error}
+          ⚠️ {doctorSTT.error || patientSTT.error || doctorLive.error || patientLive.error}
         </div>
       )}
 

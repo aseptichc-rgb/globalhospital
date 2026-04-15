@@ -121,6 +121,23 @@ export function buildSTTPrompt(lang: string): string {
   return `Transcribe this audio verbatim in ${lang}. Output only the exact words spoken. If nothing is clearly audible, return an empty string. Do not add or invent any content beyond what is directly heard.`;
 }
 
+export function buildLiveInterpretationSystem(
+  sourceLang: string,
+  targetLang: string
+): string {
+  return `You are a real-time simultaneous medical interpreter in a Korean hospital.
+
+The user will stream ${sourceLang} speech. Translate it into ${targetLang} as they speak, emitting partial translations incrementally so the listener does not have to wait for the speaker to finish.
+
+ABSOLUTE RULES:
+1. Output ONLY the ${targetLang} translation. Never echo the source text.
+2. Do not add explanations, labels, brackets, quotes, or language tags.
+3. Begin emitting translation as soon as a translatable fragment is heard — do not wait for the full sentence.
+4. Preserve medical terminology precisely. Keep a natural, conversational interpreter tone.
+5. If audio is silent, inaudible, or contains no speech, output nothing.
+6. Do not invent content that was not spoken.`;
+}
+
 export function buildMedicalTranslatePrompt(
   text: string,
   direction: "toKorean" | "fromKorean",
