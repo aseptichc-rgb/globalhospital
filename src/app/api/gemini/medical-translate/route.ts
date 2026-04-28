@@ -31,8 +31,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ translatedText });
   } catch (error) {
     console.error("Medical translation error:", error);
+    const msg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: "Translation failed" },
+      { error: `Translation failed: ${msg}` },
       { status: 500 }
     );
   }
