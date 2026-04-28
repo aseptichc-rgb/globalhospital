@@ -247,10 +247,35 @@ export function useLiveInterpretation(
               finalizeSegment();
             }
           },
-          onerror: (e) => {
-            setError(`Live 세션 오류: ${e.message}`);
+          onerror: (e: unknown) => {
+            console.error("Live session error event:", e);
+            const ev = e as {
+              message?: string;
+              reason?: string;
+              code?: number;
+              error?: { message?: string };
+              type?: string;
+            };
+            const msg =
+              ev?.message ||
+              ev?.reason ||
+              ev?.error?.message ||
+              (ev?.code ? `code ${ev.code}` : "") ||
+              ev?.type ||
+              (typeof e === "string" ? e : JSON.stringify(e)) ||
+              "알 수 없는 오류";
+            setError(`Live 세션 오류: ${msg}`);
           },
-          onclose: () => {
+          onclose: (e: unknown) => {
+            console.warn("Live session closed:", e);
+            const ev = e as { code?: number; reason?: string };
+            if (ev?.reason || (ev?.code && ev.code !== 1000)) {
+              setError(
+                `Live 세션 종료: ${ev.reason || ""}${
+                  ev.code ? ` (code ${ev.code})` : ""
+                }`.trim()
+              );
+            }
             // Flush any pending turn when the server closes.
             finalizeSegment();
           },

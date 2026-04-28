@@ -9,3 +9,6 @@ tsconfig.tsbuildinfo
 # Firebase service account keys
 globalhospital-*-firebase-adminsdk-*.json
 .vercel
+
+# Claude Code internal worktrees (per-subagent scratch checkouts)
+.claude/worktrees/
