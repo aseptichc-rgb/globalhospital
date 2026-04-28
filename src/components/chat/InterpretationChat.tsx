@@ -421,6 +421,48 @@ export default function InterpretationChat({
     }
   }, [liveMode, doctorSTT, patientSTT, doctorLive, patientLive, doctorTTS, startSide]);
 
+  // Reset everything for a new patient without leaving the chat screen:
+  // wipe persisted chatMessages, stop any in-flight audio/STT/live sessions,
+  // and clear local UI state so the next conversation starts on a blank slate.
+  const handleNewPatient = useCallback(() => {
+    if (
+      !confirm(
+        "현재 대화를 종료하고 새 환자 통역을 시작하시겠습니까?\nStart a new patient interpretation? The current conversation will be cleared."
+      )
+    )
+      return;
+
+    // Tear down any active capture / playback / live sessions
+    liveModeRef.current = false;
+    setLiveMode(false);
+    doctorSTT.stopListening();
+    patientSTT.stopListening();
+    doctorSTT.resetTranscript();
+    patientSTT.resetTranscript();
+    doctorLive.stop();
+    patientLive.stop();
+    doctorTTS.cancel();
+
+    // Reset local UI state
+    pendingSideRef.current = null;
+    setActiveSide(null);
+    setTranslating(false);
+    setDoctorText("");
+    setPatientText("");
+    setShowSummary(false);
+
+    // Wipe persisted chat history
+    clearChatMessages();
+    prevMessageCountRef.current = 0;
+  }, [
+    doctorSTT,
+    patientSTT,
+    doctorLive,
+    patientLive,
+    doctorTTS,
+    clearChatMessages,
+  ]);
+
   return (
     <div
       className="flex flex-col h-[calc(100vh-80px)]"
@@ -429,15 +471,43 @@ export default function InterpretationChat({
         transition: "padding-bottom 0.2s ease",
       }}
     >
-      {/* Top Bar: Summary Toggle + Live Mode Toggle */}
+      {/* Top Bar: Summary Toggle + New Patient + Live Mode Toggle */}
       <div className="flex items-center justify-between gap-3 mb-3 no-print">
-        <button
-          onClick={() => setShowSummary(!showSummary)}
-          className="text-sm font-semibold underline"
-          style={{ color: "var(--gh-blue)" }}
-        >
-          {showSummary ? "사전 문진 숨기기 · Hide" : "사전 문진 보기 · Show"} summary
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowSummary(!showSummary)}
+            className="text-sm font-semibold underline"
+            style={{ color: "var(--gh-blue)" }}
+          >
+            {showSummary ? "사전 문진 숨기기 · Hide" : "사전 문진 보기 · Show"} summary
+          </button>
+
+          <button
+            onClick={handleNewPatient}
+            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-full text-sm font-semibold transition-colors"
+            style={{
+              background: "var(--gh-white)",
+              color: "var(--gh-blue-deep)",
+              border: "1.5px solid var(--gh-blue)",
+            }}
+            aria-label="Start new patient interpretation"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            새 환자 통역 · New patient
+          </button>
+        </div>
 
         <button
           onClick={handleLiveToggle}
