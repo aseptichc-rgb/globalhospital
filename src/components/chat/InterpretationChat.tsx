@@ -142,7 +142,16 @@ export default function InterpretationChat({
           // fetch() does not throw on HTTP 4xx/5xx — convert to a thrown
           // error so the catch branch (which handles live-mode auto-rearm)
           // actually runs instead of silently dropping in an empty bubble.
-          throw new Error(`Translate API error: ${res.status}`);
+          let detail = "";
+          try {
+            const body = await res.json();
+            detail = body?.error || JSON.stringify(body);
+          } catch {
+            try {
+              detail = await res.text();
+            } catch {}
+          }
+          throw new Error(`Translate API error: ${res.status} ${detail}`);
         }
         const data = await res.json();
         if (!data.translatedText) {
