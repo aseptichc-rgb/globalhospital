@@ -1,4 +1,4 @@
-const CACHE_NAME = "global-hospital-v2";
+const CACHE_NAME = "global-hospital-v3";
 const PRECACHE_URLS = ["/", "/offline"];
 
 self.addEventListener("install", (event) => {
