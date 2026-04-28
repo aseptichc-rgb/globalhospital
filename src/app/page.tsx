@@ -10,78 +10,103 @@ export default function Home() {
   const [skipIntake, setSkipIntake] = useState(false);
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
-      {/* Header */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-primary rounded-2xl mb-6">
-          <svg
-            className="w-12 h-12 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-            />
-          </svg>
+    <main className="min-h-screen flex flex-col items-center justify-center px-4 py-10 bg-bone">
+      {/* Mark + wordmark + bilingual prompt (BRAND.md §2 / §4 / §8) */}
+      <div className="text-center mb-10">
+        <div
+          className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6"
+          style={{
+            background: "var(--gh-white)",
+            boxShadow: "var(--gh-shadow-md)",
+          }}
+          aria-hidden
+        >
+          {/* Speech Cross — official brand symbol (logos/globalhospital-symbol.svg) */}
+          <img
+            src="/logos/globalhospital-symbol.svg"
+            alt="Globalhospital"
+            width={48}
+            height={48}
+          />
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Global Hospital
+
+        <h1 className="gh-wordmark text-3xl mb-3">
+          global<span className="gh-wordmark-bold">hospital</span>
         </h1>
-        <p className="text-xl text-gray-600 mb-1">
+
+        <p
+          className="text-xl font-semibold"
+          style={{ color: "var(--gh-ink)" }}
+        >
           언어를 선택해 주세요
         </p>
-        <p className="text-lg text-gray-500">
+        <p className="text-base" style={{ color: "var(--gh-steel)" }}>
           Please select your language
         </p>
       </div>
 
-      {/* Skip Intake Toggle */}
+      {/* Skip intake toggle — pill button per BRAND.md §6 */}
       <button
         onClick={() => setSkipIntake((v) => !v)}
         aria-pressed={skipIntake}
-        className={`mb-6 inline-flex items-center gap-2 px-5 py-3 rounded-xl border-2 font-semibold text-base transition-all shadow-sm ${
+        className="mb-8 inline-flex items-center gap-2 px-6 h-12 rounded-full font-semibold text-sm transition-all"
+        style={
           skipIntake
-            ? "bg-primary text-white border-primary hover:bg-primary/90"
-            : "bg-white text-gray-700 border-gray-200 hover:border-primary-light hover:bg-blue-50"
-        }`}
+            ? {
+                background: "var(--gh-blue)",
+                color: "var(--gh-white)",
+                boxShadow: "var(--gh-shadow-cta)",
+              }
+            : {
+                background: "var(--gh-white)",
+                color: "var(--gh-blue)",
+                border: "1.5px solid var(--gh-blue)",
+              }
+        }
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M13 5l7 7-7 7M5 5l7 7-7 7"
-          />
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
         </svg>
-        {skipIntake
-          ? "문진 건너뛰기: 켜짐 — 언어 선택 시 바로 진료 통역"
-          : "문진 건너뛰고 바로 진료 통역"}
+        <span className="flex flex-col items-start leading-tight">
+          <span>{skipIntake ? "문진 건너뛰기 · 켜짐" : "문진 건너뛰고 바로 진료 통역"}</span>
+          <span className="text-xs font-normal opacity-80">
+            {skipIntake ? "Skip intake · ON" : "Go straight to live interpretation"}
+          </span>
+        </span>
       </button>
 
-      {/* Flag Grid */}
-      <div className="grid grid-cols-3 md:grid-cols-5 gap-4 max-w-4xl w-full">
+      {/* Language pill grid (BRAND.md §6 — signature) */}
+      <div className="grid grid-cols-3 md:grid-cols-5 gap-3 max-w-4xl w-full">
         {LANGUAGES.map((lang) => (
           <FlagCard key={lang.code} language={lang} skipIntake={skipIntake} />
         ))}
 
-        {/* Other Language Button */}
+        {/* Other languages — dashed pill */}
         <button
           onClick={() => setShowModal(true)}
-          className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl shadow-sm border border-dashed border-gray-300 hover:shadow-lg hover:border-primary-light hover:scale-105 transition-all duration-200 cursor-pointer min-h-[120px] active:scale-95"
+          className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all aspect-square"
+          style={{
+            background: "var(--gh-bone)",
+            border: "1.5px dashed var(--gh-cloud)",
+            minHeight: "var(--gh-tap-comfort)",
+          }}
         >
-          <span className="text-4xl mb-3 text-gray-400">
-            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
-            </svg>
-          </span>
-          <span className="text-sm font-semibold text-gray-600 text-center">
+          <svg
+            className="w-8 h-8"
+            fill="none"
+            stroke="var(--gh-steel)"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+          </svg>
+          <span className="text-xs font-semibold" style={{ color: "var(--gh-ink)" }}>
             Other
           </span>
-          <span className="text-xs text-gray-400 text-center">
+          <span className="text-xs" style={{ color: "var(--gh-steel)" }}>
             기타 언어
           </span>
         </button>
@@ -91,19 +116,23 @@ export default function Home() {
       <div className="mt-12 text-center space-y-3">
         <button
           onClick={() => (window.location.href = "/history")}
-          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 px-5 h-11 text-sm font-semibold rounded-full transition-colors"
+          style={{
+            background: "var(--gh-white)",
+            color: "var(--gh-steel)",
+            border: "1px solid var(--gh-cloud)",
+          }}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          문진 기록 보기
+          문진 기록 · History
         </button>
-        <p className="text-sm text-gray-400">
-          다국어 의료 통역 서비스 | Multilingual Medical Interpretation Service
+        <p className="text-xs" style={{ color: "var(--gh-steel)" }}>
+          외국인 환자를 위한 의료 통역 · Medical interpretation for international patients
         </p>
       </div>
 
-      {/* Other Language Modal */}
       <OtherLanguageModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}

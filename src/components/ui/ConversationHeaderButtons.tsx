@@ -17,15 +17,25 @@ export default function ConversationHeaderButtons() {
     <div className="flex items-center gap-2">
       <button
         onClick={handleEndConversation}
-        className="px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+        className="px-3 h-9 text-xs font-semibold rounded-full transition-colors"
+        style={{
+          color: "var(--gh-danger)",
+          background: "var(--gh-white)",
+          border: "1.5px solid var(--gh-danger)",
+        }}
       >
         대화 종료
       </button>
       <button
         onClick={() => router.push("/")}
-        className="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+        className="px-3 h-9 text-xs font-semibold rounded-full transition-colors"
+        style={{
+          color: "var(--gh-steel)",
+          background: "var(--gh-white)",
+          border: "1px solid var(--gh-cloud)",
+        }}
       >
-        홈
+        홈 · Home
       </button>
     </div>
   );

@@ -3,7 +3,7 @@ import "./globals.css";
 import ServiceWorkerRegister from "@/components/pwa/ServiceWorkerRegister";
 
 export const viewport: Viewport = {
-  themeColor: "#1e40af",
+  themeColor: "#1656E0",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -12,17 +12,20 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Global Hospital - 다국어 의료 통역 서비스",
+  title: "Globalhospital — 의료 통역 서비스",
   description:
     "외국인 환자를 위한 다국어 음성 통역 및 사전 문진 서비스",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Global Hospital",
+    title: "Globalhospital",
   },
   icons: {
     icon: [
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],

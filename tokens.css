@@ -1,0 +1,252 @@
+/* =====================================================================
+   Globalhospital — Design Tokens
+   Single source of truth for color, type, spacing, radii, shadows.
+   Import once at app entry: import './tokens.css'
+   ===================================================================== */
+
+/* Pretendard (Korean + Latin) — primary UI font */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+/* Inter — Latin-optimized fallback for wordmark / numerals */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+:root {
+  /* ---------- Color ------------------------------------------------- */
+  /* Brand */
+  --gh-blue:        #1656E0;   /* Primary — buttons, links, mark main */
+  --gh-blue-deep:   #0B3FA6;   /* Hover, depth, shadow tint */
+  --gh-blue-soft:   #5B8DEF;   /* Info chips, soft active */
+  --gh-coral:       #FF7A6B;   /* Care accent (NOT for danger) */
+  --gh-mint:        #34D4B0;   /* Success, "Live" / connected */
+  --gh-amber:       #FFB547;   /* Warning */
+
+  /* Neutrals */
+  --gh-ink:         #0E1A2B;   /* Body text, dark backgrounds */
+  --gh-steel:       #7A8BA3;   /* Secondary text, metadata */
+  --gh-cloud:       #E7ECF5;   /* Borders, dividers */
+  --gh-bone:        #F6F7FB;   /* Card secondary bg, input bg */
+  --gh-white:       #FFFFFF;   /* Page bg, primary card bg */
+
+  /* Semantic — kept distinct from brand accents */
+  --gh-danger:      #D7263D;   /* Error / urgent (NOT coral) */
+  --gh-success:     #1AAE7C;   /* Confirmed (mint's deeper sibling) */
+
+  /* ---------- Typography -------------------------------------------- */
+  --gh-font-ui:
+    'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont,
+    'Noto Sans KR', 'Noto Sans SC', 'Noto Sans JP',
+    'Noto Sans Arabic', 'Noto Sans', sans-serif;
+  --gh-font-num: 'Inter', 'Pretendard', monospace;
+
+  --gh-fw-regular:  400;
+  --gh-fw-semibold: 600;
+  --gh-fw-extrabold: 800;
+
+  /* size / line-height pairs */
+  --gh-text-display: 48px;     --gh-lh-display: 56px;
+  --gh-text-h1:      32px;     --gh-lh-h1:      40px;
+  --gh-text-h2:      24px;     --gh-lh-h2:      32px;
+  --gh-text-h3:      18px;     --gh-lh-h3:      26px;
+  --gh-text-body-lg: 18px;     --gh-lh-body-lg: 28px;
+  --gh-text-body:    16px;     --gh-lh-body:    24px;
+  --gh-text-caption: 14px;     --gh-lh-caption: 20px;
+  --gh-text-label:   12px;     --gh-lh-label:   16px;
+
+  --gh-tracking-tight: -0.025em;
+  --gh-tracking-label: 0.08em;
+
+  /* ---------- Spacing (4px base) ----------------------------------- */
+  --gh-sp-1:  4px;
+  --gh-sp-2:  8px;
+  --gh-sp-3:  12px;
+  --gh-sp-4:  16px;
+  --gh-sp-5:  20px;
+  --gh-sp-6:  24px;
+  --gh-sp-8:  32px;
+  --gh-sp-10: 40px;
+  --gh-sp-12: 48px;
+  --gh-sp-16: 64px;
+
+  /* ---------- Radii ------------------------------------------------- */
+  --gh-r-xs:     6px;
+  --gh-r-sm:    10px;
+  --gh-r-md:    14px;
+  --gh-r-lg:    22px;
+  --gh-r-pill:  999px;
+  --gh-r-circle: 50%;
+
+  /* ---------- Shadows (blue-tinted, not pure black) ---------------- */
+  --gh-shadow-sm:
+    0 1px 0  rgba(0,0,0,0.04),
+    0 1px 2px rgba(11,63,166,0.06);
+  --gh-shadow-md:
+    0 6px 22px rgba(11,63,166,0.10);
+  --gh-shadow-lg:
+    0 18px 48px rgba(11,63,166,0.16);
+  --gh-shadow-cta:
+    0 8px 24px rgba(22,86,224,0.28);
+
+  /* ---------- Motion ------------------------------------------------ */
+  --gh-ease:        cubic-bezier(.2,.7,.3,1);
+  --gh-dur-quick:   120ms;
+  --gh-dur-base:    200ms;
+  --gh-dur-slow:    320ms;
+
+  /* ---------- Touch targets ---------------------------------------- */
+  --gh-tap-min:     44px;
+  --gh-tap-comfort: 56px;     /* default for medical context */
+  --gh-tap-kiosk:   72px;     /* kiosk / elderly */
+}
+
+/* =====================================================================
+   Base reset / page defaults
+   ===================================================================== */
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--gh-font-ui);
+  font-size: var(--gh-text-body);
+  line-height: var(--gh-lh-body);
+  color: var(--gh-ink);
+  background: var(--gh-white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+
+/* =====================================================================
+   Utility classes — use these instead of inline styles where possible
+   ===================================================================== */
+
+/* Type */
+.gh-display { font-size: var(--gh-text-display); line-height: var(--gh-lh-display); font-weight: var(--gh-fw-extrabold); letter-spacing: var(--gh-tracking-tight); }
+.gh-h1      { font-size: var(--gh-text-h1);      line-height: var(--gh-lh-h1);      font-weight: var(--gh-fw-extrabold); letter-spacing: var(--gh-tracking-tight); }
+.gh-h2      { font-size: var(--gh-text-h2);      line-height: var(--gh-lh-h2);      font-weight: var(--gh-fw-extrabold); letter-spacing: var(--gh-tracking-tight); }
+.gh-h3      { font-size: var(--gh-text-h3);      line-height: var(--gh-lh-h3);      font-weight: var(--gh-fw-semibold); }
+.gh-body-lg { font-size: var(--gh-text-body-lg); line-height: var(--gh-lh-body-lg); font-weight: var(--gh-fw-regular); }
+.gh-body    { font-size: var(--gh-text-body);    line-height: var(--gh-lh-body);    font-weight: var(--gh-fw-regular); }
+.gh-caption { font-size: var(--gh-text-caption); line-height: var(--gh-lh-caption); color: var(--gh-steel); }
+.gh-label   { font-size: var(--gh-text-label);   line-height: var(--gh-lh-label);   font-weight: var(--gh-fw-semibold); letter-spacing: var(--gh-tracking-label); text-transform: uppercase; color: var(--gh-steel); }
+
+/* Bilingual text helper — Korean above, English (smaller) below */
+.gh-bilingual { display: flex; flex-direction: column; gap: 2px; }
+.gh-bilingual > .gh-bilingual-en { font-size: 0.8em; color: var(--gh-steel); font-weight: var(--gh-fw-regular); }
+
+/* Buttons */
+.gh-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: var(--gh-sp-2);
+  height: 48px;
+  padding: 0 var(--gh-sp-5);
+  border: none;
+  border-radius: var(--gh-r-pill);
+  font-family: inherit;
+  font-size: var(--gh-text-caption);
+  font-weight: var(--gh-fw-semibold);
+  cursor: pointer;
+  transition: transform var(--gh-dur-quick) var(--gh-ease),
+              box-shadow var(--gh-dur-quick) var(--gh-ease),
+              background-color var(--gh-dur-quick) var(--gh-ease);
+  min-width: var(--gh-tap-comfort);
+}
+.gh-btn:active { transform: scale(0.97); }
+.gh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.gh-btn-primary   { background: var(--gh-blue);  color: var(--gh-white); box-shadow: var(--gh-shadow-cta); }
+.gh-btn-primary:hover { background: var(--gh-blue-deep); }
+
+.gh-btn-secondary { background: var(--gh-white); color: var(--gh-blue); border: 1.5px solid var(--gh-blue); }
+.gh-btn-secondary:hover { background: var(--gh-bone); }
+
+.gh-btn-ghost     { background: transparent; color: var(--gh-steel); }
+.gh-btn-ghost:hover { background: var(--gh-bone); color: var(--gh-ink); }
+
+/* Sizes */
+.gh-btn-lg { height: var(--gh-tap-comfort); font-size: var(--gh-text-body); padding: 0 var(--gh-sp-6); }
+.gh-btn-xl { height: var(--gh-tap-kiosk);   font-size: var(--gh-text-body-lg); padding: 0 var(--gh-sp-8); } /* kiosk */
+
+/* Card */
+.gh-card {
+  background: var(--gh-white);
+  border-radius: var(--gh-r-md);
+  padding: var(--gh-sp-6);
+  box-shadow: var(--gh-shadow-sm);
+  border: 1px solid transparent;
+  transition: border-color var(--gh-dur-base) var(--gh-ease);
+}
+.gh-card:hover { border-color: var(--gh-cloud); }
+
+/* Input */
+.gh-input {
+  display: block;
+  width: 100%;
+  height: 48px;
+  padding: 0 var(--gh-sp-4);
+  border: 1.5px solid var(--gh-cloud);
+  border-radius: var(--gh-r-sm);
+  background: var(--gh-white);
+  font-family: inherit;
+  font-size: var(--gh-text-body); /* 16px — prevents iOS auto-zoom */
+  color: var(--gh-ink);
+  transition: border-color var(--gh-dur-quick) var(--gh-ease),
+              box-shadow var(--gh-dur-quick) var(--gh-ease);
+}
+.gh-input::placeholder { color: var(--gh-steel); }
+.gh-input:focus {
+  outline: none;
+  border-color: var(--gh-blue);
+  box-shadow: 0 0 0 4px rgba(22, 86, 224, 0.12);
+}
+
+/* Language pill (signature component) */
+.gh-lang-pill {
+  aspect-ratio: 1;
+  background: var(--gh-bone);
+  border: 1px solid var(--gh-cloud);
+  border-radius: var(--gh-r-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  cursor: pointer;
+  transition: all var(--gh-dur-quick) var(--gh-ease);
+  min-width: 64px; min-height: 64px;
+}
+.gh-lang-pill:hover { border-color: var(--gh-blue); }
+.gh-lang-pill[aria-pressed="true"],
+.gh-lang-pill.is-selected {
+  background: var(--gh-blue);
+  border-color: var(--gh-blue);
+  color: var(--gh-white);
+  box-shadow: var(--gh-shadow-cta);
+}
+
+/* Live / Translation indicator */
+.gh-live-dot {
+  display: inline-flex; align-items: center; gap: var(--gh-sp-2);
+  padding: 4px 10px;
+  background: rgba(52, 212, 176, 0.14);
+  color: #0E8C68;
+  border-radius: var(--gh-r-pill);
+  font-size: var(--gh-text-label);
+  font-weight: var(--gh-fw-semibold);
+  letter-spacing: var(--gh-tracking-label);
+  text-transform: uppercase;
+}
+.gh-live-dot::before {
+  content: '';
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--gh-mint);
+  animation: gh-pulse 1.4s ease-in-out infinite;
+}
+@keyframes gh-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.4; transform: scale(0.85); }
+}
+
+/* Focus visible — accessible focus ring on every focusable */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--gh-blue);
+  outline-offset: 2px;
+  border-radius: var(--gh-r-xs);
+}

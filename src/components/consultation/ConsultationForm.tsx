@@ -485,14 +485,32 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
       style={{ paddingBottom: keyboardHeight > 0 ? `${keyboardHeight}px` : undefined }}
     >
       {/* Header */}
-      <div className="relative text-center py-4 border-b border-gray-100 shrink-0">
-        <h1 className="text-xl font-bold text-gray-900">{labels.pageTitle}</h1>
-        <p className="text-xs text-gray-500 mt-1">{labels.voiceInputHint}</p>
+      <div
+        className="relative text-center py-4 shrink-0"
+        style={{ borderBottom: "1px solid var(--gh-cloud)" }}
+      >
+        <h1
+          className="text-xl font-extrabold"
+          style={{ color: "var(--gh-ink)" }}
+        >
+          {labels.pageTitle}
+        </h1>
+        <p
+          className="text-xs mt-1"
+          style={{ color: "var(--gh-steel)" }}
+        >
+          {labels.voiceInputHint}
+        </p>
         <button
           onClick={handleSkipToChat}
-          aria-label="바로 진료 통역으로"
+          aria-label="바로 진료 통역 · Skip to live interpretation"
           title="문진 건너뛰고 바로 진료 통역"
-          className="absolute top-1/2 right-3 -translate-y-1/2 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 text-xs font-semibold shadow-sm hover:border-primary-light hover:bg-blue-50 hover:text-primary transition-colors"
+          className="absolute top-1/2 right-3 -translate-y-1/2 inline-flex items-center gap-1.5 px-3 h-9 rounded-full text-xs font-semibold transition-colors"
+          style={{
+            background: "var(--gh-white)",
+            color: "var(--gh-blue)",
+            border: "1.5px solid var(--gh-blue)",
+          }}
         >
           <span className="hidden sm:inline">바로 진료 통역</span>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -509,25 +527,47 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
             className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-300`}
           >
             {msg.type === "system" && (
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mr-2 mt-1">
-                <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 mr-2 mt-1"
+                style={{ background: "rgba(22, 86, 224, 0.12)" }}
+                aria-hidden
+              >
+                {/* Speech-cross mini mark */}
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M6 4h10a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-2l-2 3-2-3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 2-3z"
+                    fill="var(--gh-blue)"
+                  />
                 </svg>
               </div>
             )}
             <div
-              className={`max-w-[75%] rounded-2xl px-4 py-3 shadow-sm ${
-                msg.type === "system"
-                  ? "bg-gray-100 text-gray-800 rounded-tl-md"
-                  : "bg-primary text-white rounded-tr-md"
-              }`}
+              className="max-w-[75%] px-4 py-3"
+              style={{
+                background:
+                  msg.type === "system" ? "var(--gh-bone)" : "var(--gh-blue)",
+                color:
+                  msg.type === "system" ? "var(--gh-ink)" : "var(--gh-white)",
+                borderRadius: "var(--gh-r-md)",
+                borderTopLeftRadius:
+                  msg.type === "system" ? "var(--gh-r-xs)" : undefined,
+                borderTopRightRadius:
+                  msg.type === "user" ? "var(--gh-r-xs)" : undefined,
+                boxShadow:
+                  msg.type === "user"
+                    ? "var(--gh-shadow-cta)"
+                    : "var(--gh-shadow-sm)",
+              }}
             >
-              <p className="text-xl whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+              <p className="text-lg whitespace-pre-wrap leading-relaxed">
+                {msg.text}
+              </p>
               {msg.type === "system" && (
                 <button
                   onClick={() => speak(msg.text)}
-                  className="mt-2 p-1.5 rounded-full hover:bg-gray-200 transition-colors inline-flex items-center text-gray-400 hover:text-primary"
-                  aria-label="Read aloud"
+                  className="mt-2 p-1.5 rounded-full transition-colors inline-flex items-center"
+                  style={{ color: "var(--gh-blue)" }}
+                  aria-label="Read aloud · 읽어주기"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
@@ -541,16 +581,40 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
         {/* Translating indicator */}
         {(isTranslating || phase === "generating") && (
           <div className="flex justify-start">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mr-2 mt-1">
-              <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 mr-2 mt-1"
+              style={{ background: "rgba(22, 86, 224, 0.12)" }}
+              aria-hidden
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M6 4h10a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-2l-2 3-2-3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 2-3z"
+                  fill="var(--gh-blue)"
+                />
               </svg>
             </div>
-            <div className="bg-gray-100 rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
+            <div
+              className="px-4 py-3"
+              style={{
+                background: "var(--gh-bone)",
+                borderRadius: "var(--gh-r-md)",
+                borderTopLeftRadius: "var(--gh-r-xs)",
+                boxShadow: "var(--gh-shadow-sm)",
+              }}
+            >
               <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                <div
+                  className="w-2 h-2 rounded-full animate-bounce"
+                  style={{ background: "var(--gh-steel)", animationDelay: "0ms" }}
+                />
+                <div
+                  className="w-2 h-2 rounded-full animate-bounce"
+                  style={{ background: "var(--gh-steel)", animationDelay: "150ms" }}
+                />
+                <div
+                  className="w-2 h-2 rounded-full animate-bounce"
+                  style={{ background: "var(--gh-steel)", animationDelay: "300ms" }}
+                />
               </div>
             </div>
           </div>
@@ -561,74 +625,116 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
 
       {/* Voice status */}
       {(isListening || isProcessing) && (
-        <div className="px-4 pb-2 shrink-0">
+        <div className="px-4 pb-2 shrink-0 flex justify-center">
           {isListening && (
-            <p className="text-base text-red-500 animate-pulse text-center">
+            <span className="gh-live-dot">
               {labels.listeningMessage}
-            </p>
+            </span>
           )}
           {!isListening && isProcessing && (
-            <p className="text-base text-blue-500 animate-pulse text-center">
+            <span
+              className="text-sm animate-pulse"
+              style={{ color: "var(--gh-blue)" }}
+            >
               {labels.processingVoiceMessage}
-            </p>
+            </span>
           )}
         </div>
       )}
 
       {speechError && (
         <div className="px-4 pb-2 shrink-0">
-          <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg text-center">
-            ⚠️ {speechError}
+          <p
+            className="text-sm px-3 py-2 text-center"
+            style={{
+              color: "var(--gh-danger)",
+              background: "rgba(215, 38, 61, 0.08)",
+              border: "1px solid rgba(215, 38, 61, 0.25)",
+              borderRadius: "var(--gh-r-sm)",
+            }}
+            role="alert"
+          >
+            ⚠ {speechError}
           </p>
         </div>
       )}
 
       {/* Input Area or Complete Button */}
       {phase === "complete" ? (
-        <div className="p-4 border-t border-gray-100 shrink-0">
-          {/* Final progress */}
+        <div
+          className="p-4 shrink-0"
+          style={{ borderTop: "1px solid var(--gh-cloud)" }}
+        >
           <div className="flex items-center justify-center mb-3">
-            <span className="text-sm font-medium text-primary">
+            <span
+              className="text-sm font-semibold"
+              style={{ color: "var(--gh-blue)" }}
+            >
               {answeredCount} / {totalQuestions}
             </span>
           </div>
           <button
             onClick={handleComplete}
-            className="w-full py-4 bg-primary text-white font-semibold text-lg rounded-xl hover:bg-primary-dark transition-colors"
+            className="w-full font-semibold text-lg rounded-full transition-colors"
+            style={{
+              height: "var(--gh-tap-comfort)",
+              background: "var(--gh-blue)",
+              color: "var(--gh-white)",
+              boxShadow: "var(--gh-shadow-cta)",
+            }}
           >
             {labels.followUpCompleteButton} →
           </button>
         </div>
       ) : showInput ? (
-        <div className="p-4 border-t border-gray-100 shrink-0">
-          {/* Progress indicator: answered / total */}
+        <div
+          className="p-4 shrink-0"
+          style={{ borderTop: "1px solid var(--gh-cloud)" }}
+        >
           <div className="flex items-center justify-center gap-2 mb-3">
             <div className="flex items-center gap-1.5">
               {Array.from({ length: totalQuestions }).map((_, idx) => (
                 <div
                   key={idx}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    idx < answeredCount
-                      ? "w-4 bg-primary"
-                      : idx === answeredCount
-                      ? "w-6 bg-primary animate-pulse"
-                      : "w-2 bg-gray-200"
-                  }`}
+                  className="h-1.5 rounded-full transition-all duration-300"
+                  style={{
+                    width:
+                      idx < answeredCount
+                        ? 16
+                        : idx === answeredCount
+                        ? 24
+                        : 8,
+                    background:
+                      idx <= answeredCount
+                        ? "var(--gh-blue)"
+                        : "var(--gh-cloud)",
+                    animation:
+                      idx === answeredCount
+                        ? "gh-pulse 1.4s ease-in-out infinite"
+                        : "none",
+                  }}
                 />
               ))}
             </div>
-            <span className="text-xs font-medium text-gray-500 ml-1">
+            <span
+              className="text-xs font-semibold ml-1"
+              style={{ color: "var(--gh-steel)" }}
+            >
               {answeredCount} / {totalQuestions}
             </span>
           </div>
 
           <div className="flex gap-2 items-end">
-            {/* Skip button */}
             {canSkip && (
               <button
                 onClick={handleSkip}
                 disabled={isTranslating}
-                className="px-4 py-3 text-base text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-40 shrink-0"
+                className="px-4 h-12 text-sm font-semibold rounded-full transition-colors disabled:opacity-40 shrink-0"
+                style={{
+                  color: "var(--gh-steel)",
+                  background: "var(--gh-white)",
+                  border: "1px solid var(--gh-cloud)",
+                }}
               >
                 {labels.skipButton}
               </button>
@@ -645,8 +751,8 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
               autoCorrect="off"
               dir={language.dir}
               rows={1}
-              className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent resize-none text-gray-800 placeholder-gray-400 text-lg"
-              style={{ minHeight: "48px", maxHeight: "120px" }}
+              className="gh-input flex-1 resize-none"
+              style={{ minHeight: "48px", maxHeight: "120px", paddingTop: 12, paddingBottom: 12 }}
             />
 
             {canUseVoice && (
@@ -660,7 +766,12 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
             <button
               onClick={handleSend}
               disabled={!inputValue.trim() || isTranslating}
-              className="px-5 py-3 bg-primary text-white font-medium rounded-xl hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 text-lg"
+              className="px-5 h-12 font-semibold rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              style={{
+                background: "var(--gh-blue)",
+                color: "var(--gh-white)",
+                boxShadow: "var(--gh-shadow-cta)",
+              }}
             >
               {labels.sendButton}
             </button>

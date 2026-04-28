@@ -24,34 +24,54 @@ export default async function LangLayout({
   }
 
   return (
-    <div dir={language.dir} className="min-h-screen bg-surface">
-      {/* Top bar */}
-      <header className="bg-white border-b border-gray-100 px-4 py-3 no-print">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
+    <div
+      dir={language.dir}
+      className="min-h-screen"
+      style={{ background: "var(--gh-bone)" }}
+    >
+      {/* Top bar — clinical, calm, blue-tinted shadow per BRAND.md §5 */}
+      <header
+        className="px-4 py-3 no-print"
+        style={{
+          background: "var(--gh-white)",
+          borderBottom: "1px solid var(--gh-cloud)",
+        }}
+      >
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
           <Link
             href="/"
-            className="flex items-center gap-2 text-primary font-semibold"
+            className="flex items-center gap-2 font-semibold"
+            style={{ color: "var(--gh-blue)" }}
+            aria-label="언어 선택으로 돌아가기 · Back to language selection"
           >
             <svg
-              className="w-6 h-6"
+              className="w-5 h-5"
               fill="none"
               stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
               viewBox="0 0 24 24"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-              />
+              <path d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             <span className="text-sm">언어 선택</span>
           </Link>
           <div className="flex items-center gap-3">
             <ConversationHeaderButtons />
-            <div className="flex items-center gap-2">
-              <FlagImage countryCode={language.countryCode} alt={language.nameInEnglish} size="sm" />
-              <span className="text-sm font-medium text-gray-600">
+            <div
+              className="flex items-center gap-2 px-3 h-9 rounded-full"
+              style={{ background: "var(--gh-bone)" }}
+            >
+              <FlagImage
+                countryCode={language.countryCode}
+                alt={language.nameInEnglish}
+                size="sm"
+              />
+              <span
+                className="text-sm font-semibold"
+                style={{ color: "var(--gh-ink)" }}
+              >
                 {language.nameInNative}
               </span>
             </div>

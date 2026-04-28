@@ -33,26 +33,44 @@ export default function OtherLanguageModal({ isOpen, onClose, skipIntake = false
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 backdrop-blur-sm"
+        style={{ background: "rgba(14, 26, 43, 0.5)" }}
         onClick={onClose}
       />
 
-      {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="p-5 border-b border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">
-              다른 언어 선택 / Select Language
-            </h2>
+      <div
+        className="relative w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden"
+        style={{
+          background: "var(--gh-white)",
+          borderRadius: "var(--gh-r-lg)",
+          boxShadow: "var(--gh-shadow-lg)",
+        }}
+      >
+        <div
+          className="p-5"
+          style={{ borderBottom: "1px solid var(--gh-cloud)" }}
+        >
+          <div className="flex items-start justify-between mb-4 gap-3">
+            <div className="flex flex-col leading-tight">
+              <h2
+                className="text-lg font-extrabold"
+                style={{ color: "var(--gh-ink)" }}
+              >
+                다른 언어 선택
+              </h2>
+              <span className="text-sm" style={{ color: "var(--gh-steel)" }}>
+                Select another language
+              </span>
+            </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500"
+              className="w-9 h-9 flex items-center justify-center rounded-full transition-colors"
+              style={{ color: "var(--gh-steel)" }}
+              aria-label="닫기 · Close"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
@@ -60,17 +78,19 @@ export default function OtherLanguageModal({ isOpen, onClose, skipIntake = false
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="검색 / Search..."
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent"
+            placeholder="검색 · Search…"
+            className="gh-input"
             autoFocus
           />
         </div>
 
-        {/* Language List */}
         <div className="overflow-y-auto flex-1 p-3">
           {filtered.length === 0 ? (
-            <p className="text-center text-gray-400 py-8 text-sm">
-              검색 결과가 없습니다 / No results found
+            <p
+              className="text-center py-8 text-sm"
+              style={{ color: "var(--gh-steel)" }}
+            >
+              검색 결과가 없습니다 · No results found
             </p>
           ) : (
             <div className="grid grid-cols-2 gap-2">
@@ -78,7 +98,13 @@ export default function OtherLanguageModal({ isOpen, onClose, skipIntake = false
                 <button
                   key={lang.code}
                   onClick={() => handleSelect(lang.code)}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-blue-50 hover:border-primary-light border border-gray-100 transition-colors text-left"
+                  className="flex items-center gap-3 p-3 transition-colors text-left"
+                  style={{
+                    background: "var(--gh-white)",
+                    border: "1px solid var(--gh-cloud)",
+                    borderRadius: "var(--gh-r-sm)",
+                    minHeight: "var(--gh-tap-comfort)",
+                  }}
                 >
                   <FlagImage
                     countryCode={lang.countryCode}
@@ -86,10 +112,16 @@ export default function OtherLanguageModal({ isOpen, onClose, skipIntake = false
                     size="md"
                   />
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-gray-800 truncate">
+                    <div
+                      className="text-sm font-semibold truncate"
+                      style={{ color: "var(--gh-ink)" }}
+                    >
                       {lang.nameInNative}
                     </div>
-                    <div className="text-xs text-gray-500 truncate">
+                    <div
+                      className="text-xs truncate"
+                      style={{ color: "var(--gh-steel)" }}
+                    >
                       {lang.nameInKorean}
                     </div>
                   </div>

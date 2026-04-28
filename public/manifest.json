@@ -4,8 +4,8 @@
   "description": "외국인 환자를 위한 다국어 음성 통역 및 사전 문진 서비스",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f8fafc",
-  "theme_color": "#1e40af",
+  "background_color": "#FAF7F2",
+  "theme_color": "#1656E0",
   "orientation": "portrait",
   "scope": "/",
   "icons": [

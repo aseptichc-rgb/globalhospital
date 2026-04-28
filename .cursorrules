@@ -1,0 +1,42 @@
+# Cursor / Claude Code project rules — Globalhospital
+# Place this file at your project root as `.cursorrules` (Cursor) or
+# include in CLAUDE.md (Claude Code). Either tool will respect it.
+
+## Design System
+
+This project follows the Globalhospital brand. Read `BRAND.md` (in project root)
+once before generating any UI code, and follow it strictly.
+
+### Hard rules — never break these
+1. **Never hardcode colors.** Use only `var(--gh-*)` tokens defined in `tokens.css`.
+   - ❌ `color: #1656E0` → ✅ `color: var(--gh-blue)`
+2. **Body text minimum 16px** (kiosk surfaces 18px). Never go smaller for content.
+3. **Touch targets minimum 56px** (`var(--gh-tap-comfort)`). Buttons must be at least this tall.
+4. **Bilingual UI by default.** Korean primary (larger), English subtitle (smaller).
+   Use `.gh-bilingual` / `.gh-bilingual-en` helper classes.
+5. **Coral (`--gh-coral`) is a brand accent, NOT a danger color.** For errors/urgent,
+   use `--gh-danger` (#D7263D).
+6. **Font weights are 400 / 600 / 800 only.** Don't use 500 or 700.
+7. **Logo SVGs in `assets/logo/` are sacred.** Do not redraw, recolor outside of mono variants,
+   or reposition the speech bubbles in the Speech Cross mark.
+8. **No medical clichés** — no syringe, stethoscope, pill icons. Use Lucide:
+   `MessageCircle`, `Languages`, `Mic`, `Globe`, `Heart`.
+9. **No emoji** in UI chrome except country flags.
+10. **Pretendard / Inter only.** Never propose other fonts.
+
+### Component patterns
+Use the prebuilt utility classes in `tokens.css`:
+- `.gh-btn` `.gh-btn-primary` `.gh-btn-secondary` `.gh-btn-ghost`
+- `.gh-btn-lg` `.gh-btn-xl` (xl = kiosk)
+- `.gh-card`
+- `.gh-input`
+- `.gh-lang-pill` (the signature component)
+- `.gh-live-dot` (translation/active indicator)
+- `.gh-display` `.gh-h1` `.gh-h2` `.gh-h3` `.gh-body` `.gh-body-lg` `.gh-caption` `.gh-label`
+
+Build new components by composing these — don't restyle from scratch.
+
+### When unsure
+Refer to BRAND.md sections by number:
+- §3 Color · §4 Typography · §5 Spacing/Radii/Shadows · §6 Components ·
+- §7 Iconography · §8 Voice & Copy · §9 Accessibility

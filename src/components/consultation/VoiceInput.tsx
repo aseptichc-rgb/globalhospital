@@ -58,7 +58,10 @@ export default function VoiceInput({
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-semibold text-gray-700">
+      <label
+        className="block text-sm font-semibold"
+        style={{ color: "var(--gh-ink)" }}
+      >
         {label}
       </label>
       <div className="flex gap-3 items-start">
@@ -71,7 +74,8 @@ export default function VoiceInput({
           autoComplete="off"
           autoCorrect="off"
           rows={3}
-          className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent resize-none text-gray-800 placeholder-gray-400"
+          className="gh-input flex-1 resize-none"
+          style={{ height: "auto", paddingTop: 12, paddingBottom: 12 }}
         />
         {canUseVoice && (
           <MicrophoneButton
@@ -81,18 +85,30 @@ export default function VoiceInput({
         )}
       </div>
       {isListening && (
-        <p className="text-sm text-red-500 animate-pulse">
-          🎤 음성을 듣고 있습니다... (말을 멈추면 자동 전송)
-        </p>
+        <span className="gh-live-dot">
+          음성을 듣고 있습니다 · Listening
+        </span>
       )}
       {!isListening && isProcessing && (
-        <p className="text-sm text-blue-500 animate-pulse">
-          음성을 변환하고 있습니다...
+        <p
+          className="text-sm animate-pulse"
+          style={{ color: "var(--gh-blue)" }}
+        >
+          음성을 변환하고 있습니다… · Transcribing…
         </p>
       )}
       {error && (
-        <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
-          ⚠️ {error}
+        <p
+          className="text-sm px-3 py-2"
+          style={{
+            color: "var(--gh-danger)",
+            background: "rgba(215, 38, 61, 0.08)",
+            border: "1px solid rgba(215, 38, 61, 0.25)",
+            borderRadius: "var(--gh-r-sm)",
+          }}
+          role="alert"
+        >
+          ⚠ {error}
         </p>
       )}
     </div>

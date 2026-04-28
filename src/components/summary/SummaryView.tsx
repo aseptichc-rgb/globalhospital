@@ -75,56 +75,101 @@ export default function SummaryView({ language }: SummaryViewProps) {
   if (!showSummary) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
-        <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-8">
-          <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+        <div
+          className="w-20 h-20 rounded-full flex items-center justify-center mb-8"
+          style={{ background: "rgba(52, 212, 176, 0.18)" }}
+          aria-hidden
+        >
+          <svg
+            className="w-10 h-10"
+            fill="none"
+            stroke="var(--gh-mint)"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            viewBox="0 0 24 24"
+          >
+            <path d="M5 13l4 4L19 7" />
           </svg>
         </div>
         <p
-          className="text-2xl font-bold text-gray-800 whitespace-pre-line leading-relaxed mb-12"
+          className="text-2xl font-extrabold whitespace-pre-line leading-relaxed mb-12"
+          style={{ color: "var(--gh-ink)" }}
           dir={language.dir}
         >
           {labels.handoffMessage}
         </p>
         <button
           onClick={() => setShowSummary(true)}
-          className="px-8 py-4 bg-primary text-white font-semibold text-lg rounded-xl hover:bg-primary-dark transition-colors no-print"
+          className="px-8 font-semibold text-lg rounded-full transition-colors no-print"
+          style={{
+            height: "var(--gh-tap-comfort)",
+            background: "var(--gh-blue)",
+            color: "var(--gh-white)",
+            boxShadow: "var(--gh-shadow-cta)",
+          }}
         >
-          결과 확인 (의료진 전용)
+          결과 확인 · For medical staff
         </button>
       </div>
     );
   }
 
   // Compact summary for medical staff
+  const cardStyle: React.CSSProperties = {
+    background: "var(--gh-white)",
+    border: "1px solid var(--gh-cloud)",
+    borderRadius: "var(--gh-r-md)",
+    boxShadow: "var(--gh-shadow-sm)",
+  };
+  const labelCellStyle: React.CSSProperties = {
+    background: "var(--gh-bone)",
+    color: "var(--gh-blue)",
+  };
+
   return (
     <div className="space-y-3 text-sm">
-      {/* Title */}
       <div className="text-center mb-2">
-        <h1 className="text-lg font-bold text-gray-900">결과 요약</h1>
-        <p className="text-xs text-gray-400">
+        <h1
+          className="text-lg font-extrabold"
+          style={{ color: "var(--gh-ink)" }}
+        >
+          문진 결과 요약 · Pre-Consultation Summary
+        </h1>
+        <p className="text-xs" style={{ color: "var(--gh-steel)" }}>
           환자 언어: {language.nameInKorean} ({language.nameInNative})
         </p>
       </div>
 
-      {/* Compact table for base fields */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="overflow-hidden" style={cardStyle}>
         <table className="w-full">
           <tbody>
             {FIELD_KEYS.map((key) => {
               const field = formData[key];
               if (!field?.original) return null;
               return (
-                <tr key={key} className="border-b border-gray-50 last:border-0">
-                  <td className="px-3 py-2 text-xs font-semibold text-blue-600 whitespace-nowrap align-top w-20 bg-gray-50/50">
+                <tr
+                  key={key}
+                  style={{ borderBottom: "1px solid var(--gh-cloud)" }}
+                >
+                  <td
+                    className="px-3 py-2 text-xs font-semibold whitespace-nowrap align-top w-20"
+                    style={labelCellStyle}
+                  >
                     {KOREAN_LABELS[key]}
                   </td>
                   <td className="px-3 py-2">
-                    <span className="text-sm text-gray-800">
+                    <span
+                      className="text-sm"
+                      style={{ color: "var(--gh-ink)" }}
+                    >
                       {field.korean || field.original}
                     </span>
                     {field.korean && field.original && (
-                      <span className="text-xs text-gray-400 ml-2">
+                      <span
+                        className="text-xs ml-2"
+                        style={{ color: "var(--gh-steel)" }}
+                      >
                         ({field.original})
                       </span>
                     )}
@@ -136,28 +181,62 @@ export default function SummaryView({ language }: SummaryViewProps) {
         </table>
       </div>
 
-      {/* Follow-up Q&A - compact */}
       {followUpQuestions.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-3 py-2 bg-gray-50/50 border-b border-gray-100">
-            <h2 className="text-xs font-bold text-gray-700">추가 질문 답변</h2>
+        <div className="overflow-hidden" style={cardStyle}>
+          <div
+            className="px-3 py-2"
+            style={{
+              background: "var(--gh-bone)",
+              borderBottom: "1px solid var(--gh-cloud)",
+            }}
+          >
+            <h2
+              className="text-xs font-extrabold uppercase"
+              style={{
+                color: "var(--gh-blue-deep)",
+                letterSpacing: "var(--gh-tracking-label)",
+              }}
+            >
+              추가 질문 답변 · Follow-up
+            </h2>
           </div>
           <table className="w-full">
             <tbody>
               {followUpQuestions.map((question, index) => {
                 const answer = followUpAnswers[index];
                 const koreanQuestion = followUpQuestionsKorean[index] || question;
-                const answerText = answer?.korean || answer?.original || "-";
+                const answerText = answer?.korean || answer?.original || "—";
                 return (
-                  <tr key={index} className="border-b border-gray-50 last:border-0">
-                    <td className="px-3 py-2 text-xs font-semibold text-primary whitespace-nowrap align-top w-20 bg-gray-50/50">
+                  <tr
+                    key={index}
+                    style={{ borderBottom: "1px solid var(--gh-cloud)" }}
+                  >
+                    <td
+                      className="px-3 py-2 text-xs font-semibold whitespace-nowrap align-top w-20"
+                      style={labelCellStyle}
+                    >
                       Q{index + 1}
                     </td>
                     <td className="px-3 py-2">
-                      <p className="text-xs text-gray-500 mb-0.5">{koreanQuestion}</p>
-                      <p className="text-sm text-gray-800 font-medium">{answerText}</p>
+                      <p
+                        className="text-xs mb-0.5"
+                        style={{ color: "var(--gh-steel)" }}
+                      >
+                        {koreanQuestion}
+                      </p>
+                      <p
+                        className="text-sm font-semibold"
+                        style={{ color: "var(--gh-ink)" }}
+                      >
+                        {answerText}
+                      </p>
                       {answer?.korean && answer?.original && (
-                        <p className="text-xs text-gray-400">({answer.original})</p>
+                        <p
+                          className="text-xs"
+                          style={{ color: "var(--gh-steel)" }}
+                        >
+                          ({answer.original})
+                        </p>
                       )}
                     </td>
                   </tr>
@@ -168,35 +247,56 @@ export default function SummaryView({ language }: SummaryViewProps) {
         </div>
       )}
 
-      {/* Saved Session ID */}
       {savedId && (
-        <div className="bg-green-50 px-3 py-2 rounded-xl border border-green-200 text-center">
-          <p className="text-xs text-green-700">
-            세션 ID: <span className="font-mono font-bold">{savedId}</span>
+        <div
+          className="px-3 py-2 text-center"
+          style={{
+            background: "rgba(52, 212, 176, 0.16)",
+            border: "1px solid rgba(52, 212, 176, 0.4)",
+            borderRadius: "var(--gh-r-md)",
+          }}
+        >
+          <p className="text-xs" style={{ color: "#0E8C68" }}>
+            세션 ID:{" "}
+            <span className="font-mono font-bold">{savedId}</span>
           </p>
         </div>
       )}
 
-      {/* Action Buttons - compact row */}
       <div className="flex gap-2 no-print">
         <button
           onClick={handleSave}
           disabled={saving || !!savedId}
-          className="flex-1 py-2.5 bg-green-600 text-white font-semibold text-sm rounded-xl hover:bg-green-700 transition-colors disabled:opacity-40"
+          className="flex-1 h-12 font-semibold text-sm rounded-full transition-colors disabled:opacity-40"
+          style={{
+            background: "var(--gh-mint)",
+            color: "var(--gh-ink)",
+            boxShadow: "0 8px 24px rgba(52, 212, 176, 0.28)",
+          }}
         >
-          {saving ? "저장 중..." : savedId ? "저장 완료" : "저장"}
+          {saving ? "저장 중…" : savedId ? "저장 완료 ✓" : "저장 · Save"}
         </button>
 
         <button
           onClick={handlePrint}
-          className="flex-1 py-2.5 bg-gray-600 text-white font-semibold text-sm rounded-xl hover:bg-gray-700 transition-colors"
+          className="flex-1 h-12 font-semibold text-sm rounded-full transition-colors"
+          style={{
+            background: "var(--gh-white)",
+            color: "var(--gh-blue)",
+            border: "1.5px solid var(--gh-blue)",
+          }}
         >
-          인쇄
+          인쇄 · Print
         </button>
 
         <button
           onClick={handleStartChat}
-          className="flex-1 py-2.5 bg-primary text-white font-semibold text-sm rounded-xl hover:bg-primary-dark transition-colors"
+          className="flex-1 h-12 font-semibold text-sm rounded-full transition-colors"
+          style={{
+            background: "var(--gh-blue)",
+            color: "var(--gh-white)",
+            boxShadow: "var(--gh-shadow-cta)",
+          }}
         >
           통역 시작
         </button>
@@ -205,12 +305,27 @@ export default function SummaryView({ language }: SummaryViewProps) {
       <div className="no-print">
         <button
           onClick={() => router.push("/history")}
-          className="w-full py-2.5 text-gray-600 font-medium text-sm rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+          className="w-full h-11 font-semibold text-sm rounded-full flex items-center justify-center gap-2 transition-colors"
+          style={{
+            color: "var(--gh-steel)",
+            background: "var(--gh-white)",
+            border: "1px solid var(--gh-cloud)",
+          }}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
           </svg>
-          저장된 문진 보기
+          저장된 문진 보기 · History
         </button>
       </div>
     </div>
