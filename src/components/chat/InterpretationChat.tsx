@@ -9,6 +9,7 @@ import { LanguageConfig } from "@/types/language";
 import { ChatMessage } from "@/types/consultation";
 import MicrophoneButton from "@/components/ui/MicrophoneButton";
 import KeyboardTextarea from "@/components/keyboard/KeyboardTextarea";
+import { useKeyboardContext } from "@/components/keyboard/VirtualKeyboardProvider";
 
 interface InterpretationChatProps {
   language: LanguageConfig;
@@ -49,6 +50,7 @@ export default function InterpretationChat({
   const [liveMode, setLiveMode] = useState(false);
   const [doctorText, setDoctorText] = useState("");
   const [patientText, setPatientText] = useState("");
+  const { keyboardHeight } = useKeyboardContext();
   const liveModeRef = useRef(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const prevMessageCountRef = useRef(chatMessages.length);
@@ -107,7 +109,7 @@ export default function InterpretationChat({
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
+  }, [chatMessages, keyboardHeight]);
 
   // Tracks which side is currently being listened to (set on start, cleared on translate)
   const pendingSideRef = useRef<"doctor" | "patient" | null>(null);
@@ -420,7 +422,13 @@ export default function InterpretationChat({
   }, [liveMode, doctorSTT, patientSTT, doctorLive, patientLive, doctorTTS, startSide]);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)]">
+    <div
+      className="flex flex-col h-[calc(100vh-80px)]"
+      style={{
+        paddingBottom: keyboardHeight > 0 ? `${keyboardHeight}px` : undefined,
+        transition: "padding-bottom 0.2s ease",
+      }}
+    >
       {/* Top Bar: Summary Toggle + Live Mode Toggle */}
       <div className="flex items-center justify-between gap-3 mb-3 no-print">
         <button
