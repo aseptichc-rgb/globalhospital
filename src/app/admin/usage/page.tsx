@@ -8,12 +8,12 @@ interface UsageStats {
   totalTokens: number;
   totalPromptTokens: number;
   totalCandidatesTokens: number;
-  byUser: Array<{ uid: string; email: string; calls: number; totalTokens: number }>;
+  byUser: Array<{ uid: string; username: string; calls: number; totalTokens: number }>;
   byRoute: Array<{ route: string; calls: number; totalTokens: number }>;
   byDay: Array<{ date: string; calls: number; totalTokens: number }>;
   recent: Array<{
     id: string;
-    email: string;
+    username: string;
     route: string;
     model: string;
     promptTokens: number;
@@ -136,7 +136,7 @@ export default function AdminUsagePage() {
               <Table
                 rows={stats.byUser}
                 cols={[
-                  { header: "이메일", render: (r) => r.email },
+                  { header: "아이디", render: (r) => r.username },
                   { header: "호출", render: (r) => r.calls.toLocaleString(), align: "right" },
                   { header: "토큰", render: (r) => r.totalTokens.toLocaleString(), align: "right" },
                 ]}
@@ -165,7 +165,7 @@ export default function AdminUsagePage() {
                   header: "시각",
                   render: (r) => new Date(r.createdAt).toLocaleString("ko-KR"),
                 },
-                { header: "사용자", render: (r) => r.email },
+                { header: "사용자", render: (r) => r.username },
                 { header: "라우트", render: (r) => r.route },
                 { header: "모델", render: (r) => r.model },
                 {

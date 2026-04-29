@@ -11,7 +11,7 @@ export interface UsageMetadataLike {
 
 export async function logUsage(args: {
   uid: string;
-  email: string;
+  username: string;
   route: string;
   model: string;
   usage: UsageMetadataLike | undefined;
@@ -22,7 +22,7 @@ export async function logUsage(args: {
       .collection(COLLECTION)
       .add({
         uid: args.uid,
-        email: args.email,
+        username: args.username,
         route: args.route,
         model: args.model,
         promptTokens: u.promptTokenCount || 0,
@@ -45,7 +45,7 @@ export interface UsageStats {
   totalCandidatesTokens: number;
   byUser: Array<{
     uid: string;
-    email: string;
+    username: string;
     calls: number;
     totalTokens: number;
   }>;
@@ -71,7 +71,7 @@ export async function getUsageStats(opts?: {
 
     const byUserMap = new Map<
       string,
-      { uid: string; email: string; calls: number; totalTokens: number }
+      { uid: string; username: string; calls: number; totalTokens: number }
     >();
     const byRouteMap = new Map<
       string,
@@ -94,7 +94,7 @@ export async function getUsageStats(opts?: {
 
       const u = byUserMap.get(r.uid) || {
         uid: r.uid,
-        email: r.email,
+        username: r.username,
         calls: 0,
         totalTokens: 0,
       };

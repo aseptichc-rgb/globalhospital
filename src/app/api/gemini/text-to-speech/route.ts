@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     const data = await upstream.json();
     await logUsage({
       uid: auth.uid,
-      email: auth.email,
+      username: auth.username,
       route: "/api/gemini/text-to-speech",
       model: TTS_MODEL,
       usage: data?.usageMetadata,

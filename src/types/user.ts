@@ -3,7 +3,7 @@ export type UserRole = "user" | "admin";
 
 export interface AppUser {
   uid: string;
-  email: string;
+  username: string;
   displayName?: string;
   hospitalName?: string;
   status: UserStatus;
@@ -17,7 +17,7 @@ export interface AppUser {
 export interface UsageLog {
   id: string;
   uid: string;
-  email: string;
+  username: string;
   route: string;
   model: string;
   promptTokens: number;

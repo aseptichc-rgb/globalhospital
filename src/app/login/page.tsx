@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -16,8 +15,7 @@ export default function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await login(email.trim(), password);
-      // AuthGate handles redirect.
+      await login(username, password);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(parseAuthError(msg));
@@ -47,15 +45,17 @@ export default function LoginPage() {
         </p>
 
         <label className="block">
-          <span className="text-sm font-semibold">이메일</span>
+          <span className="text-sm font-semibold">아이디</span>
           <input
-            type="email"
+            type="text"
             required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             className="mt-1 w-full h-11 px-3 rounded-lg border outline-none focus:border-blue-500"
             style={{ borderColor: "var(--gh-cloud)" }}
-            autoComplete="email"
+            autoComplete="username"
+            autoCapitalize="off"
+            spellCheck={false}
           />
         </label>
 
@@ -88,11 +88,8 @@ export default function LoginPage() {
           {submitting ? "로그인 중…" : "로그인"}
         </button>
 
-        <p className="text-sm text-center" style={{ color: "var(--gh-steel)" }}>
-          계정이 없으신가요?{" "}
-          <Link href="/signup" style={{ color: "var(--gh-blue)" }}>
-            회원가입
-          </Link>
+        <p className="text-xs text-center" style={{ color: "var(--gh-steel)" }}>
+          계정이 필요하신 경우 관리자에게 문의해 주세요.
         </p>
       </form>
     </main>
@@ -101,10 +98,11 @@ export default function LoginPage() {
 
 function parseAuthError(msg: string): string {
   if (msg.includes("invalid-credential") || msg.includes("wrong-password"))
-    return "이메일 또는 비밀번호가 올바르지 않습니다.";
+    return "아이디 또는 비밀번호가 올바르지 않습니다.";
   if (msg.includes("user-not-found"))
-    return "등록되지 않은 이메일입니다.";
+    return "등록되지 않은 아이디입니다.";
   if (msg.includes("too-many-requests"))
     return "잠시 후 다시 시도해 주세요.";
+  if (msg.includes("아이디는")) return msg;
   return "로그인에 실패했습니다. 다시 시도해 주세요.";
 }

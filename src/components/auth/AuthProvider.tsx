@@ -12,11 +12,11 @@ import {
 import {
   onIdTokenChanged,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   signOut,
   type User,
 } from "firebase/auth";
 import { getClientAuth } from "@/lib/firebase-client";
+import { isValidUsername, usernameToEmail } from "@/lib/username";
 import type { AppUser } from "@/types/user";
 
 const SESSION_COOKIE = "gh_session";
@@ -30,12 +30,7 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  login: (email: string, password: string) => Promise<void>;
-  signup: (
-    email: string,
-    password: string,
-    extra: { displayName?: string; hospitalName?: string }
-  ) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -45,11 +40,29 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 function setSessionCookie(token: string | null) {
   if (typeof document === "undefined") return;
   if (token) {
-    // 1 hour matches the ID token lifetime; AuthProvider refreshes earlier.
     const oneHour = 60 * 60;
     document.cookie = `${SESSION_COOKIE}=${token}; path=/; max-age=${oneHour}; SameSite=Lax`;
   } else {
     document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
+  }
+}
+
+async function tryAdminBootstrap(
+  username: string,
+  password: string
+): Promise<boolean> {
+  // If a whitelisted admin tries to log in but doesn't exist yet, the server
+  // creates the Firebase Auth user lazily so the very first login works.
+  try {
+    const res = await fetch("/api/auth/admin-bootstrap", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.error("[auth] admin bootstrap failed:", err);
+    return false;
   }
 }
 
@@ -126,37 +139,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchProfile]);
 
-  const login = useCallback(async (email: string, password: string) => {
-    await signInWithEmailAndPassword(getClientAuth(), email, password);
-  }, []);
-
-  const signup = useCallback(
-    async (
-      email: string,
-      password: string,
-      extra: { displayName?: string; hospitalName?: string }
-    ) => {
-      const cred = await createUserWithEmailAndPassword(
-        getClientAuth(),
-        email,
-        password
-      );
-      const token = await cred.user.getIdToken();
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(extra),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "회원가입에 실패했습니다");
+  const login = useCallback(async (username: string, password: string) => {
+    const normalized = username.trim().toLowerCase();
+    if (!isValidUsername(normalized)) {
+      throw new Error("아이디는 영문 소문자/숫자/_ 3-20자여야 합니다.");
+    }
+    const email = usernameToEmail(normalized);
+    try {
+      await signInWithEmailAndPassword(getClientAuth(), email, password);
+    } catch (err) {
+      const code = err instanceof Error ? err.message : String(err);
+      const isMissing =
+        code.includes("user-not-found") || code.includes("invalid-credential");
+      if (isMissing) {
+        const ok = await tryAdminBootstrap(normalized, password);
+        if (ok) {
+          await signInWithEmailAndPassword(getClientAuth(), email, password);
+          return;
+        }
       }
-    },
-    []
-  );
+      throw err;
+    }
+  }, []);
 
   const logout = useCallback(async () => {
     await signOut(getClientAuth());
@@ -164,8 +168,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ ...state, login, signup, logout, refreshProfile }),
-    [state, login, signup, logout, refreshProfile]
+    () => ({ ...state, login, logout, refreshProfile }),
+    [state, login, logout, refreshProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminAuth } from "./firebase";
 import { ensureWhitelistedAdmin, getUser, isWhitelistedAdmin } from "./users";
+import { emailToUsername } from "./username";
 import type { AppUser } from "@/types/user";
 
 export const SESSION_COOKIE = "gh_session";
 
 export interface AuthedRequest {
   uid: string;
-  email: string;
+  username: string;
   user: AppUser;
 }
 
@@ -24,11 +25,12 @@ async function verifyAndLoad(req: NextRequest): Promise<AuthedRequest | null> {
   if (!token) return null;
   try {
     const decoded = await getAdminAuth().verifyIdToken(token);
-    if (!decoded.email) return null;
-    await ensureWhitelistedAdmin(decoded.uid, decoded.email);
+    const username = emailToUsername(decoded.email);
+    if (!username) return null;
+    await ensureWhitelistedAdmin(decoded.uid, username);
     const user = await getUser(decoded.uid);
     if (!user) return null;
-    return { uid: decoded.uid, email: decoded.email, user };
+    return { uid: decoded.uid, username, user };
   } catch (err) {
     console.error("[auth] token verification failed:", err);
     return null;
@@ -65,7 +67,7 @@ export async function requireAdmin(
   const result = await requireApproved(req);
   if (result instanceof NextResponse) return result;
   const isAdmin =
-    result.user.role === "admin" || isWhitelistedAdmin(result.email);
+    result.user.role === "admin" || isWhitelistedAdmin(result.username);
   if (!isAdmin) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

@@ -3,16 +3,16 @@ import type { AppUser, UserStatus } from "@/types/user";
 
 const COLLECTION = "users";
 
-function getAdminEmails(): string[] {
-  return (process.env.ADMIN_EMAILS || "")
+function getAdminUsernames(): string[] {
+  return (process.env.ADMIN_USERNAMES || "")
     .split(",")
-    .map((e) => e.trim().toLowerCase())
+    .map((u) => u.trim().toLowerCase())
     .filter(Boolean);
 }
 
-export function isWhitelistedAdmin(email: string | undefined | null): boolean {
-  if (!email) return false;
-  return getAdminEmails().includes(email.toLowerCase());
+export function isWhitelistedAdmin(username: string | undefined | null): boolean {
+  if (!username) return false;
+  return getAdminUsernames().includes(username.toLowerCase());
 }
 
 export async function getUser(uid: string): Promise<AppUser | null> {
@@ -26,26 +26,50 @@ export async function getUser(uid: string): Promise<AppUser | null> {
   }
 }
 
+export async function findByUsername(username: string): Promise<AppUser | null> {
+  try {
+    const snap = await getDb()
+      .collection(COLLECTION)
+      .where("username", "==", username.toLowerCase())
+      .limit(1)
+      .get();
+    if (snap.empty) return null;
+    const d = snap.docs[0];
+    return { uid: d.id, ...d.data() } as AppUser;
+  } catch (err) {
+    console.error("[users.findByUsername] error:", err);
+    throw err;
+  }
+}
+
 export async function createUser(
   uid: string,
-  email: string,
-  data: { displayName?: string; hospitalName?: string }
+  username: string,
+  data: {
+    displayName?: string;
+    hospitalName?: string;
+    role?: "user" | "admin";
+    status?: UserStatus;
+    approvedBy?: string;
+  }
 ): Promise<AppUser> {
   try {
     const now = new Date().toISOString();
-    const isAdmin = isWhitelistedAdmin(email);
+    const isAdmin = data.role === "admin" || isWhitelistedAdmin(username);
+    const status: UserStatus =
+      data.status || (isAdmin ? "approved" : "approved");
     const user: Omit<AppUser, "uid"> = {
-      email,
+      username: username.toLowerCase(),
       displayName: data.displayName,
       hospitalName: data.hospitalName,
-      status: isAdmin ? "approved" : "pending",
+      status,
       role: isAdmin ? "admin" : "user",
       createdAt: now,
       updatedAt: now,
-      approvedAt: isAdmin ? now : undefined,
-      approvedBy: isAdmin ? "system" : undefined,
+      approvedAt: status === "approved" ? now : undefined,
+      approvedBy:
+        status === "approved" ? data.approvedBy || "system" : undefined,
     };
-    // Firestore rejects undefined fields; strip them.
     const clean = Object.fromEntries(
       Object.entries(user).filter(([, v]) => v !== undefined)
     );
@@ -100,11 +124,9 @@ export async function setUserStatus(
 
 export async function ensureWhitelistedAdmin(
   uid: string,
-  email: string
+  username: string
 ): Promise<void> {
-  // If a whitelisted admin email signs in but their Firestore record is stale
-  // (created before the whitelist, or status got out of sync), repair it.
-  if (!isWhitelistedAdmin(email)) return;
+  if (!isWhitelistedAdmin(username)) return;
   try {
     const ref = getDb().collection(COLLECTION).doc(uid);
     const doc = await ref.get();

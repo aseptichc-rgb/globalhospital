@@ -28,9 +28,9 @@ export default function PendingPage() {
             ? "관리자가 가입 요청을 거부했습니다. 자세한 내용은 관리자에게 문의해 주세요."
             : "관리자의 승인을 기다리고 있습니다. 승인이 완료되면 서비스를 이용하실 수 있습니다."}
         </p>
-        {profile?.email && (
+        {profile?.username && (
           <p className="text-xs" style={{ color: "var(--gh-steel)" }}>
-            계정: {profile.email}
+            계정: {profile.username}
           </p>
         )}
 

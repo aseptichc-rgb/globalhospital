@@ -73,7 +73,7 @@ export default function AdminLayout({
             className="hidden sm:flex items-center gap-3 text-xs"
             style={{ color: "var(--gh-steel)" }}
           >
-            <span className="truncate max-w-[200px]">{profile?.email}</span>
+            <span className="truncate max-w-[200px]">{profile?.username}</span>
             <button
               onClick={logout}
               className="px-3 h-8 rounded-full font-semibold shrink-0"

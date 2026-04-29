@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     await logUsage({
       uid: auth.uid,
-      email: auth.email,
+      username: auth.username,
       route: "/api/gemini/speech-to-text",
       model: "gemini-2.5-flash",
       usage: result.response?.usageMetadata,

@@ -23,7 +23,7 @@ export const geminiChatModel = genAI.getGenerativeModel({
 
 export async function recordGeminiUsage(args: {
   uid: string;
-  email: string;
+  username: string;
   route: string;
   model?: string;
   result: GenerateContentResult;
@@ -31,7 +31,7 @@ export async function recordGeminiUsage(args: {
   const usage = args.result.response?.usageMetadata;
   await logUsage({
     uid: args.uid,
-    email: args.email,
+    username: args.username,
     route: args.route,
     model: args.model || GEMINI_DEFAULT_MODEL,
     usage,

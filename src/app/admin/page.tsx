@@ -10,13 +10,13 @@ interface UsageStats {
   totalTokens: number;
   totalPromptTokens: number;
   totalCandidatesTokens: number;
-  byUser: Array<{ uid: string; email: string; calls: number; totalTokens: number }>;
+  byUser: Array<{ uid: string; username: string; calls: number; totalTokens: number }>;
   byRoute: Array<{ route: string; calls: number; totalTokens: number }>;
   byDay: Array<{ date: string; calls: number; totalTokens: number }>;
 }
 
 export default function AdminDashboard() {
-  const [pending, setPending] = useState<AppUser[] | null>(null);
+  const [users, setUsers] = useState<AppUser[] | null>(null);
   const [stats, setStats] = useState<UsageStats | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +25,7 @@ export default function AdminDashboard() {
     (async () => {
       try {
         const [usersRes, usageRes] = await Promise.all([
-          authedFetch("/api/admin/users?status=pending"),
+          authedFetch("/api/admin/users"),
           authedFetch("/api/admin/usage?days=30"),
         ]);
         if (cancelled) return;
@@ -36,7 +36,7 @@ export default function AdminDashboard() {
         const usersData = await usersRes.json();
         const usageData = await usageRes.json();
         if (cancelled) return;
-        setPending(usersData.users || []);
+        setUsers(usersData.users || []);
         setStats(usageData.stats);
       } catch (err) {
         if (cancelled) return;
@@ -47,6 +47,9 @@ export default function AdminDashboard() {
       cancelled = true;
     };
   }, []);
+
+  const approvedCount = users?.filter((u) => u.status === "approved").length;
+  const recent = users?.slice(0, 5) ?? null;
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -62,11 +65,7 @@ export default function AdminDashboard() {
       )}
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard
-          label="승인 대기"
-          value={pending?.length ?? "—"}
-          href="/admin/users?status=pending"
-        />
+        <StatCard label="활성 회원" value={approvedCount ?? "—"} href="/admin/users" />
         <StatCard
           label="30일 호출 수"
           value={stats?.totalCalls?.toLocaleString() ?? "—"}
@@ -90,29 +89,30 @@ export default function AdminDashboard() {
 
       <section className="p-4 rounded-2xl bg-white" style={{ boxShadow: "var(--gh-shadow-sm)" }}>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold">최근 승인 대기</h2>
-          <Link
-            href="/admin/users?status=pending"
-            className="text-sm"
-            style={{ color: "var(--gh-blue)" }}
-          >
+          <h2 className="font-bold">최근 회원</h2>
+          <Link href="/admin/users" className="text-sm" style={{ color: "var(--gh-blue)" }}>
             전체 보기 →
           </Link>
         </div>
-        {pending === null ? (
+        {recent === null ? (
           <p className="text-sm text-gray-500">불러오는 중…</p>
-        ) : pending.length === 0 ? (
-          <p className="text-sm text-gray-500">승인 대기 중인 회원이 없습니다.</p>
+        ) : recent.length === 0 ? (
+          <p className="text-sm text-gray-500">등록된 회원이 없습니다.</p>
         ) : (
           <ul className="divide-y" style={{ borderColor: "var(--gh-cloud)" }}>
-            {pending.slice(0, 5).map((u) => (
+            {recent.map((u) => (
               <li
                 key={u.uid}
                 className="py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-sm"
               >
                 <span className="min-w-0 break-words">
-                  {u.displayName || u.email}
-                  <span className="text-gray-500"> · {u.email}</span>
+                  <span className="font-semibold">{u.username}</span>
+                  {u.displayName && (
+                    <span className="text-gray-500"> · {u.displayName}</span>
+                  )}
+                  {u.hospitalName && (
+                    <span className="text-gray-500"> · {u.hospitalName}</span>
+                  )}
                 </span>
                 <span className="text-xs text-gray-500 shrink-0">
                   {new Date(u.createdAt).toLocaleString("ko-KR")}

@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     await recordGeminiUsage({
       uid: auth.uid,
-      email: auth.email,
+      username: auth.username,
       route: "/api/gemini/followup",
       result,
     });

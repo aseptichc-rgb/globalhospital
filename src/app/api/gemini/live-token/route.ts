@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     // per-call token counts here. Log the issuance event itself for visibility.
     await logUsage({
       uid: auth.uid,
-      email: auth.email,
+      username: auth.username,
       route: "/api/gemini/live-token",
       model: CLIENT_MODEL,
       usage: undefined,
