@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { STT_SYSTEM, buildSTTPrompt } from "@/lib/gemini-prompts";
+import { requireApproved } from "@/lib/auth-server";
+import { logUsage } from "@/lib/usage";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -14,6 +16,9 @@ const sttModel = genAI.getGenerativeModel({
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireApproved(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { audio, mimeType, lang } = await request.json();
 
     if (!audio || !lang) {
@@ -61,6 +66,14 @@ export async function POST(request: NextRequest) {
         role: "system",
         parts: [{ text: STT_SYSTEM }],
       },
+    });
+
+    await logUsage({
+      uid: auth.uid,
+      email: auth.email,
+      route: "/api/gemini/speech-to-text",
+      model: "gemini-2.5-flash",
+      usage: result.response?.usageMetadata,
     });
 
     const transcript = result.response.text().trim();

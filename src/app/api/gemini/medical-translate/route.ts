@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { geminiChatModel } from "@/lib/gemini";
+import { geminiChatModel, recordGeminiUsage } from "@/lib/gemini";
 import {
   CHAT_TRANSLATE_SYSTEM,
   buildMedicalTranslatePrompt,
 } from "@/lib/gemini-prompts";
+import { requireApproved } from "@/lib/auth-server";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireApproved(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { text, direction, patientLang } = await request.json();
 
     if (!text || !direction || !patientLang) {
@@ -24,6 +28,13 @@ export async function POST(request: NextRequest) {
         role: "system",
         parts: [{ text: CHAT_TRANSLATE_SYSTEM }],
       },
+    });
+
+    await recordGeminiUsage({
+      uid: auth.uid,
+      email: auth.email,
+      route: "/api/gemini/medical-translate",
+      result,
     });
 
     const translatedText = result.response.text().trim();

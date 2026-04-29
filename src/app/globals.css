@@ -75,6 +75,10 @@ html, body {
   body { font-size: 12pt; }
 }
 
+/* Hide scrollbar on horizontally scrollable strips (mobile tab rows). */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 /* Mic recording pulse (kept from original; tinted to brand danger) */
 @keyframes pulse-ring {
   0%   { transform: scale(0.8); opacity: 1; }

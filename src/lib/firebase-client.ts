@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
+import { getAuth, type Auth } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,6 +14,15 @@ const firebaseConfig = {
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-const analytics = typeof window !== "undefined" ? isSupported().then((yes) => (yes ? getAnalytics(app) : null)) : null;
+const analytics =
+  typeof window !== "undefined"
+    ? isSupported().then((yes) => (yes ? getAnalytics(app) : null))
+    : null;
+
+let _auth: Auth | null = null;
+export function getClientAuth(): Auth {
+  if (!_auth) _auth = getAuth(app);
+  return _auth;
+}
 
 export { app, analytics };

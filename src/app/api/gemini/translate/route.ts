@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { geminiModel } from "@/lib/gemini";
+import { geminiModel, recordGeminiUsage } from "@/lib/gemini";
 import { TRANSLATE_SYSTEM, buildTranslatePrompt } from "@/lib/gemini-prompts";
+import { requireApproved } from "@/lib/auth-server";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireApproved(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { text, sourceLang, targetLang } = await request.json();
 
     if (!text || !sourceLang || !targetLang) {
@@ -18,6 +22,13 @@ export async function POST(request: NextRequest) {
     const result = await geminiModel.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       systemInstruction: { role: "system", parts: [{ text: TRANSLATE_SYSTEM }] },
+    });
+
+    await recordGeminiUsage({
+      uid: auth.uid,
+      email: auth.email,
+      route: "/api/gemini/translate",
+      result,
     });
 
     const translatedText = result.response.text().trim();

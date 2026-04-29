@@ -1,9 +1,12 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, type GenerateContentResult } from "@google/generative-ai";
+import { logUsage } from "./usage";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
+export const GEMINI_DEFAULT_MODEL = "gemini-2.5-flash";
+
 export const geminiModel = genAI.getGenerativeModel({
-  model: "gemini-2.5-flash",
+  model: GEMINI_DEFAULT_MODEL,
   generationConfig: {
     temperature: 0.1,
     maxOutputTokens: 1024,
@@ -11,9 +14,26 @@ export const geminiModel = genAI.getGenerativeModel({
 });
 
 export const geminiChatModel = genAI.getGenerativeModel({
-  model: "gemini-2.5-flash",
+  model: GEMINI_DEFAULT_MODEL,
   generationConfig: {
     temperature: 0.2,
     maxOutputTokens: 256,
   },
 });
+
+export async function recordGeminiUsage(args: {
+  uid: string;
+  email: string;
+  route: string;
+  model?: string;
+  result: GenerateContentResult;
+}): Promise<void> {
+  const usage = args.result.response?.usageMetadata;
+  await logUsage({
+    uid: args.uid,
+    email: args.email,
+    route: args.route,
+    model: args.model || GEMINI_DEFAULT_MODEL,
+    usage,
+  });
+}

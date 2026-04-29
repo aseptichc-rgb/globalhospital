@@ -5,6 +5,7 @@ import { useConsultationStore } from "@/hooks/useConsultationStore";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
 import { useLiveInterpretation } from "@/hooks/useLiveInterpretation";
+import { useAutocomplete } from "@/hooks/useAutocomplete";
 import { LanguageConfig } from "@/types/language";
 import { ChatMessage } from "@/types/consultation";
 import MicrophoneButton from "@/components/ui/MicrophoneButton";
@@ -105,6 +106,22 @@ export default function InterpretationChat({
   const patientLive = useLiveInterpretation({
     sourceLang: language.geminiLangName,
     targetLang: "Korean",
+  });
+
+  // Autocomplete for both sides — disabled while translating or in live mode
+  // because the textareas are themselves disabled in those states.
+  const autocompleteDisabled = translating || liveMode;
+  const doctorAutocomplete = useAutocomplete({
+    prefix: doctorText,
+    role: "doctor",
+    patientLang: language.geminiLangName,
+    disabled: autocompleteDisabled,
+  });
+  const patientAutocomplete = useAutocomplete({
+    prefix: patientText,
+    role: "patient",
+    patientLang: language.geminiLangName,
+    disabled: autocompleteDisabled,
   });
 
   useEffect(() => {
@@ -791,6 +808,30 @@ export default function InterpretationChat({
             onClick={handleDoctorMic}
             disabled={translating || doctorSTT.isProcessing || patientSTT.isProcessing}
           />
+          {doctorAutocomplete.suggestions.length > 0 && (
+            <div className="w-full flex flex-wrap gap-1.5 mt-1">
+              {doctorAutocomplete.suggestions.map((s, i) => (
+                <button
+                  key={`doc-${i}-${s}`}
+                  type="button"
+                  onClick={() => {
+                    setDoctorText(s);
+                    doctorAutocomplete.clear();
+                  }}
+                  className="px-2.5 py-1 rounded-full text-sm transition-colors text-left"
+                  style={{
+                    background: "var(--gh-bone)",
+                    color: "var(--gh-blue-deep)",
+                    border: "1px solid var(--gh-cloud)",
+                    maxWidth: "100%",
+                  }}
+                  title={s}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -849,6 +890,32 @@ export default function InterpretationChat({
             onClick={handlePatientMic}
             disabled={translating || doctorSTT.isProcessing || patientSTT.isProcessing}
           />
+          {patientAutocomplete.suggestions.length > 0 && (
+            <div className="w-full flex flex-wrap gap-1.5 mt-1">
+              {patientAutocomplete.suggestions.map((s, i) => (
+                <button
+                  key={`pat-${i}-${s}`}
+                  type="button"
+                  onClick={() => {
+                    setPatientText(s);
+                    patientAutocomplete.clear();
+                  }}
+                  dir={language.dir}
+                  lang={language.bcp47}
+                  className="px-2.5 py-1 rounded-full text-sm transition-colors text-left"
+                  style={{
+                    background: "rgba(52, 212, 176, 0.12)",
+                    color: "#0E8C68",
+                    border: "1px solid rgba(52, 212, 176, 0.4)",
+                    maxWidth: "100%",
+                  }}
+                  title={s}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
           <form
             onSubmit={(e) => {
               e.preventDefault();

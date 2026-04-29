@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { geminiModel } from "@/lib/gemini";
+import { geminiModel, recordGeminiUsage } from "@/lib/gemini";
 import {
   DYNAMIC_FOLLOWUP_SYSTEM,
   buildDynamicFollowUpPrompt,
   FollowUpQAContext,
 } from "@/lib/gemini-prompts";
+import { requireApproved } from "@/lib/auth-server";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireApproved(request);
+    if (auth instanceof NextResponse) return auth;
+
     const {
       chiefComplaint,
       chiefComplaintKorean,
@@ -39,6 +43,13 @@ export async function POST(request: NextRequest) {
         role: "system",
         parts: [{ text: DYNAMIC_FOLLOWUP_SYSTEM }],
       },
+    });
+
+    await recordGeminiUsage({
+      uid: auth.uid,
+      email: auth.email,
+      route: "/api/gemini/followup-dynamic",
+      result,
     });
 
     const responseText = result.response.text().trim();

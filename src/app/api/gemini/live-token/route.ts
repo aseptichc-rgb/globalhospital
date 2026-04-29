@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import { buildLiveInterpretationSystem } from "@/lib/gemini-prompts";
+import { requireApproved } from "@/lib/auth-server";
+import { logUsage } from "@/lib/usage";
 
 const CLIENT_MODEL = "gemini-live-2.5-flash-preview";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireApproved(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { sourceLang, targetLang } = await request.json();
 
     if (!sourceLang || !targetLang) {
@@ -25,6 +30,16 @@ export async function POST(request: NextRequest) {
         newSessionExpireTime: new Date(now + 60 * 1000).toISOString(),
         httpOptions: { apiVersion: "v1alpha" },
       },
+    });
+
+    // Live API streams tokens directly to the client, so we can't measure
+    // per-call token counts here. Log the issuance event itself for visibility.
+    await logUsage({
+      uid: auth.uid,
+      email: auth.email,
+      route: "/api/gemini/live-token",
+      model: CLIENT_MODEL,
+      usage: undefined,
     });
 
     return NextResponse.json({

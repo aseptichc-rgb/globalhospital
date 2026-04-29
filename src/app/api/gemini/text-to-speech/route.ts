@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireApproved } from "@/lib/auth-server";
+import { logUsage } from "@/lib/usage";
 
 const API_KEY = process.env.GEMINI_API_KEY!;
 const TTS_MODEL = "gemini-2.5-flash-preview-tts";
@@ -33,6 +35,9 @@ function wavHeader(
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireApproved(request);
+    if (auth instanceof NextResponse) return auth;
+
     const { text, lang } = await request.json();
 
     if (!text || typeof text !== "string" || !text.trim()) {
@@ -74,6 +79,13 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await upstream.json();
+    await logUsage({
+      uid: auth.uid,
+      email: auth.email,
+      route: "/api/gemini/text-to-speech",
+      model: TTS_MODEL,
+      usage: data?.usageMetadata,
+    });
     const part = data?.candidates?.[0]?.content?.parts?.[0];
     const b64: string | undefined = part?.inlineData?.data;
     const mime: string = part?.inlineData?.mimeType ?? "";

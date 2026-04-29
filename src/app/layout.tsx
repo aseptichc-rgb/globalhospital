@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import ServiceWorkerRegister from "@/components/pwa/ServiceWorkerRegister";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import AuthGate from "@/components/auth/AuthGate";
 
 export const viewport: Viewport = {
   themeColor: "#1656E0",
@@ -43,7 +45,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="bg-surface min-h-screen">
-        {children}
+        <AuthProvider>
+          <AuthGate>{children}</AuthGate>
+        </AuthProvider>
         <ServiceWorkerRegister />
       </body>
     </html>
