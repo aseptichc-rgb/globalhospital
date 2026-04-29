@@ -486,17 +486,17 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
     >
       {/* Header */}
       <div
-        className="relative text-center py-4 shrink-0"
+        className="relative text-center py-3 sm:py-4 px-14 sm:px-16 shrink-0"
         style={{ borderBottom: "1px solid var(--gh-cloud)" }}
       >
         <h1
-          className="text-xl font-extrabold"
+          className="text-base sm:text-xl font-extrabold leading-tight"
           style={{ color: "var(--gh-ink)" }}
         >
           {labels.pageTitle}
         </h1>
         <p
-          className="text-xs mt-1"
+          className="text-[11px] sm:text-xs mt-0.5 sm:mt-1"
           style={{ color: "var(--gh-steel)" }}
         >
           {labels.voiceInputHint}
@@ -505,7 +505,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
           onClick={handleSkipToChat}
           aria-label="바로 진료 통역 · Skip to live interpretation"
           title="문진 건너뛰고 바로 진료 통역"
-          className="absolute top-1/2 right-3 -translate-y-1/2 inline-flex items-center gap-1.5 px-3 h-9 rounded-full text-xs font-semibold transition-colors"
+          className="absolute top-1/2 right-2 sm:right-3 -translate-y-1/2 inline-flex items-center gap-1.5 px-2.5 sm:px-3 h-9 rounded-full text-xs font-semibold transition-colors"
           style={{
             background: "var(--gh-white)",
             color: "var(--gh-blue)",
@@ -528,7 +528,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
           >
             {msg.type === "system" && (
               <div
-                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 mr-2 mt-1"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0 mr-1.5 sm:mr-2 mt-1"
                 style={{ background: "rgba(22, 86, 224, 0.12)" }}
                 aria-hidden
               >
@@ -542,7 +542,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
               </div>
             )}
             <div
-              className="max-w-[75%] px-4 py-3"
+              className="max-w-[85%] sm:max-w-[75%] px-3 sm:px-4 py-2.5 sm:py-3"
               style={{
                 background:
                   msg.type === "system" ? "var(--gh-bone)" : "var(--gh-blue)",
@@ -559,7 +559,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
                     : "var(--gh-shadow-sm)",
               }}
             >
-              <p className="text-lg whitespace-pre-wrap leading-relaxed">
+              <p className="text-base sm:text-lg whitespace-pre-wrap leading-relaxed">
                 {msg.text}
               </p>
               {msg.type === "system" && (
@@ -724,12 +724,12 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
             </span>
           </div>
 
-          <div className="flex gap-2 items-end">
+          <div className="flex gap-1.5 sm:gap-2 items-end">
             {canSkip && (
               <button
                 onClick={handleSkip}
                 disabled={isTranslating}
-                className="px-4 h-12 text-sm font-semibold rounded-full transition-colors disabled:opacity-40 shrink-0"
+                className="px-3 sm:px-4 h-12 text-xs sm:text-sm font-semibold rounded-full transition-colors disabled:opacity-40 shrink-0"
                 style={{
                   color: "var(--gh-steel)",
                   background: "var(--gh-white)",
@@ -751,7 +751,7 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
               autoCorrect="off"
               dir={language.dir}
               rows={1}
-              className="gh-input flex-1 resize-none"
+              className="gh-input flex-1 min-w-0 resize-none"
               style={{ minHeight: "48px", maxHeight: "120px", paddingTop: 12, paddingBottom: 12 }}
             />
 
@@ -766,14 +766,24 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
             <button
               onClick={handleSend}
               disabled={!inputValue.trim() || isTranslating}
-              className="px-5 h-12 font-semibold rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              aria-label={labels.sendButton}
+              className="inline-flex items-center justify-center h-12 w-12 sm:w-auto sm:px-5 font-semibold rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
               style={{
                 background: "var(--gh-blue)",
                 color: "var(--gh-white)",
                 boxShadow: "var(--gh-shadow-cta)",
               }}
             >
-              {labels.sendButton}
+              <svg
+                className="w-5 h-5 sm:hidden"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+              <span className="hidden sm:inline">{labels.sendButton}</span>
             </button>
           </div>
         </div>

@@ -31,16 +31,16 @@ export default async function LangLayout({
     >
       {/* Top bar — clinical, calm, blue-tinted shadow per BRAND.md §5 */}
       <header
-        className="px-4 py-3 no-print"
+        className="px-3 sm:px-4 py-2 sm:py-3 no-print"
         style={{
           background: "var(--gh-white)",
           borderBottom: "1px solid var(--gh-cloud)",
         }}
       >
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-2">
           <Link
             href="/"
-            className="flex items-center gap-2 font-semibold"
+            className="flex items-center gap-1.5 font-semibold shrink-0"
             style={{ color: "var(--gh-blue)" }}
             aria-label="언어 선택으로 돌아가기 · Back to language selection"
           >
@@ -55,12 +55,12 @@ export default async function LangLayout({
             >
               <path d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            <span className="text-sm">언어 선택</span>
+            <span className="hidden sm:inline text-sm">언어 선택</span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
             <ConversationHeaderButtons />
             <div
-              className="flex items-center gap-2 px-3 h-9 rounded-full"
+              className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 h-9 rounded-full shrink-0"
               style={{ background: "var(--gh-bone)" }}
             >
               <FlagImage
@@ -69,7 +69,7 @@ export default async function LangLayout({
                 size="sm"
               />
               <span
-                className="text-sm font-semibold"
+                className="text-xs sm:text-sm font-semibold truncate max-w-[80px] sm:max-w-none"
                 style={{ color: "var(--gh-ink)" }}
               >
                 {language.nameInNative}
@@ -80,7 +80,9 @@ export default async function LangLayout({
       </header>
 
       <KeyboardWrapper languageCode={language.code} dir={language.dir}>
-        <main className="max-w-2xl mx-auto px-4 py-6">{children}</main>
+        <main className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          {children}
+        </main>
       </KeyboardWrapper>
     </div>
   );

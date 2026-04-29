@@ -489,19 +489,19 @@ export default function InterpretationChat({
       }}
     >
       {/* Top Bar: Summary Toggle + New Patient + Live Mode Toggle */}
-      <div className="flex items-center justify-between gap-3 mb-3 no-print">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 mb-3 no-print">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
           <button
             onClick={() => setShowSummary(!showSummary)}
-            className="text-sm font-semibold underline"
+            className="text-xs sm:text-sm font-semibold underline"
             style={{ color: "var(--gh-blue)" }}
           >
-            {showSummary ? "사전 문진 숨기기 · Hide" : "사전 문진 보기 · Show"} summary
+            {showSummary ? "사전 문진 숨기기" : "사전 문진 보기"}
           </button>
 
           <button
             onClick={handleNewPatient}
-            className="inline-flex items-center gap-1.5 px-3 h-9 rounded-full text-sm font-semibold transition-colors"
+            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 h-9 rounded-full text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap"
             style={{
               background: "var(--gh-white)",
               color: "var(--gh-blue-deep)",
@@ -522,14 +522,15 @@ export default function InterpretationChat({
                 d="M12 4v16m8-8H4"
               />
             </svg>
-            새 환자 통역 · New patient
+            <span className="sm:hidden">새 환자</span>
+            <span className="hidden sm:inline">새 환자 통역 · New patient</span>
           </button>
         </div>
 
         <button
           onClick={handleLiveToggle}
           aria-pressed={liveMode}
-          className="inline-flex items-center gap-2 px-5 h-11 rounded-full font-semibold text-sm transition-all"
+          className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 h-10 sm:h-11 rounded-full font-semibold text-xs sm:text-sm transition-all whitespace-nowrap"
           style={
             liveMode
               ? {
@@ -551,7 +552,7 @@ export default function InterpretationChat({
               animation: liveMode ? "gh-pulse 1.4s ease-in-out infinite" : "none",
             }}
           />
-          {liveMode ? "실시간 통역 끄기" : "실시간 통역 켜기"}
+          {liveMode ? "실시간 끄기" : "실시간 켜기"}
         </button>
       </div>
 
@@ -639,7 +640,7 @@ export default function InterpretationChat({
               }`}
             >
               <div
-                className="max-w-[80%] p-4"
+                className="max-w-[88%] sm:max-w-[80%] p-3 sm:p-4"
                 style={{
                   background:
                     msg.speaker === "doctor"
@@ -662,13 +663,13 @@ export default function InterpretationChat({
                   {msg.speaker === "doctor" ? "Doctor · 의사" : "Patient · 환자"}
                 </p>
                 <p
-                  className="text-xl font-semibold leading-relaxed"
+                  className="text-base sm:text-xl font-semibold leading-relaxed"
                   style={{ color: "var(--gh-ink)" }}
                 >
                   {msg.originalText}
                 </p>
                 <p
-                  className="text-lg mt-2 pt-2 leading-relaxed"
+                  className="text-sm sm:text-lg mt-2 pt-2 leading-relaxed"
                   style={{
                     color: "var(--gh-blue-deep)",
                     borderTop: "1px solid rgba(14, 26, 43, 0.12)",
