@@ -160,31 +160,95 @@ export default function ConsultationForm({ language }: ConsultationFormProps) {
   }, [chatMessages, speak]);
 
   const TOTAL_FOLLOWUP_QUESTIONS = 5;
+  const FOLLOWUP_FETCH_MAX_ATTEMPTS = 3;
+  const FOLLOWUP_RETRY_BASE_MS = 500;
 
-  // Generate a single follow-up question dynamically
+  // Fallback questions used only when Gemini repeatedly fails. Keeps the
+  // 10-question flow from collapsing early on a transient API hiccup.
+  // Patient-language text is produced via /api/gemini/translate; on translate
+  // failure we still ship the English text so the form proceeds.
+  const FOLLOWUP_FALLBACK_QUESTIONS_EN: Record<number, string> = {
+    1: "When did your symptoms start, and how long have they lasted?",
+    2: "How severe is it? Please describe the intensity, frequency, or how often it happens.",
+    3: "Do you have any other symptoms along with this?",
+    4: "Does anything make it better or worse?",
+    5: "Is there anything else about your condition you would like the doctor to know?",
+  };
+  const FOLLOWUP_FALLBACK_QUESTIONS_KO: Record<number, string> = {
+    1: "증상이 언제부터 시작되었나요? 얼마나 지속되었나요?",
+    2: "증상이 얼마나 심한가요? 강도, 빈도 또는 얼마나 자주 발생하는지 알려주세요.",
+    3: "이 증상과 함께 다른 증상도 있나요?",
+    4: "어떤 상황에서 증상이 더 나아지거나 악화되나요?",
+    5: "의사에게 알리고 싶은 다른 정보가 있나요?",
+  };
+
+  // Generate a single follow-up question dynamically, with retry + fallback so
+  // a single failed API call doesn't end the flow early.
   const generateNextFollowUpQuestion = useCallback(
     async (questionNumber: number, previousQA: { question: string; questionKorean: string; answer: string; answerKorean: string }[]) => {
+      for (let attempt = 1; attempt <= FOLLOWUP_FETCH_MAX_ATTEMPTS; attempt++) {
+        try {
+          const res = await fetch("/api/gemini/followup-dynamic", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chiefComplaint: formData.chiefComplaint.original,
+              chiefComplaintKorean: formData.chiefComplaint.korean,
+              targetLang: language.geminiLangName,
+              previousQA,
+              questionNumber,
+              totalQuestions: TOTAL_FOLLOWUP_QUESTIONS,
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data?.question) {
+            return { question: data.question, questionKorean: data.questionKorean || "" };
+          }
+          console.warn(
+            `[followup] Q${questionNumber} attempt ${attempt} bad response:`,
+            res.status,
+            data?.error || data
+          );
+        } catch (error) {
+          console.error(
+            `[followup] Q${questionNumber} attempt ${attempt} error:`,
+            error
+          );
+        }
+        if (attempt < FOLLOWUP_FETCH_MAX_ATTEMPTS) {
+          await new Promise((r) =>
+            setTimeout(r, FOLLOWUP_RETRY_BASE_MS * attempt)
+          );
+        }
+      }
+
+      // All retries exhausted: fall back to a generic question so the form
+      // continues instead of collapsing into the "complete" state.
+      const fallbackEn =
+        FOLLOWUP_FALLBACK_QUESTIONS_EN[questionNumber] ||
+        FOLLOWUP_FALLBACK_QUESTIONS_EN[5];
+      const fallbackKo =
+        FOLLOWUP_FALLBACK_QUESTIONS_KO[questionNumber] ||
+        FOLLOWUP_FALLBACK_QUESTIONS_KO[5];
+      let translated = fallbackEn;
       try {
-        const res = await fetch("/api/gemini/followup-dynamic", {
+        const tRes = await fetch("/api/gemini/translate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            chiefComplaint: formData.chiefComplaint.original,
-            chiefComplaintKorean: formData.chiefComplaint.korean,
+            text: fallbackEn,
+            sourceLang: "English",
             targetLang: language.geminiLangName,
-            previousQA,
-            questionNumber,
-            totalQuestions: TOTAL_FOLLOWUP_QUESTIONS,
           }),
         });
-        const data = await res.json();
-        if (data.question) {
-          return { question: data.question, questionKorean: data.questionKorean || "" };
+        const tData = await tRes.json().catch(() => ({}));
+        if (tRes.ok && tData?.translatedText) {
+          translated = tData.translatedText;
         }
       } catch (error) {
-        console.error("Dynamic follow-up generation error:", error);
+        console.error("[followup] fallback translate failed:", error);
       }
-      return null;
+      return { question: translated, questionKorean: fallbackKo };
     },
     [formData.chiefComplaint, language.geminiLangName]
   );
