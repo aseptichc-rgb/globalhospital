@@ -44,6 +44,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
+      <head>
+        {/* Apply saved font scale before paint to avoid flash of unscaled text. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('gh-font-scale');var SC=[1,1.15,1.3,1.45];var n=s===null?0:parseInt(s,10);if(isNaN(n)||n<0||n>=SC.length)n=0;document.documentElement.style.fontSize=(SC[n]*100)+'%';}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="bg-surface min-h-screen">
         <AuthProvider>
           <AuthGate>{children}</AuthGate>

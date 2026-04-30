@@ -9,16 +9,23 @@
   border-top: 1px solid var(--gh-cloud);
   padding: 8px 6px 12px;
   font-family: var(--gh-font-ui);
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .kiosk-keyboard .hg-row {
   gap: 4px;
   margin-bottom: 4px;
+  flex-wrap: nowrap;
 }
 
 .kiosk-keyboard .hg-button {
   height: 54px;
-  min-width: 36px;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 2px;
   border-radius: var(--gh-r-sm);
   background: var(--gh-white);
   border: 1px solid var(--gh-cloud);
@@ -44,13 +51,12 @@
 
 /* Space bar */
 .kiosk-keyboard .hg-button[data-skbtn="{space}"] {
-  min-width: 200px;
   flex-grow: 4;
 }
 
 /* Backspace */
 .kiosk-keyboard .hg-button[data-skbtn="{bksp}"] {
-  min-width: 72px;
+  flex-grow: 1.6;
   font-size: 16px;
   color: var(--gh-steel);
 }
@@ -58,20 +64,42 @@
 /* Shift / Caps */
 .kiosk-keyboard .hg-button[data-skbtn="{shift}"],
 .kiosk-keyboard .hg-button[data-skbtn="{lock}"] {
-  min-width: 64px;
+  flex-grow: 1.4;
   font-size: 14px;
   color: var(--gh-steel);
 }
 
 /* Enter — primary action */
 .kiosk-keyboard .hg-button[data-skbtn="{enter}"] {
-  min-width: 72px;
+  flex-grow: 1.6;
   background: var(--gh-blue);
   color: var(--gh-white);
   border-color: var(--gh-blue);
   font-size: 14px;
   font-weight: var(--gh-fw-semibold);
   box-shadow: var(--gh-shadow-cta);
+}
+
+/* Narrow phones — shrink keys further so a full row fits within the viewport */
+@media (max-width: 480px) {
+  .kiosk-keyboard.simple-keyboard {
+    padding: 6px 3px 8px;
+  }
+  .kiosk-keyboard .hg-row {
+    gap: 2px;
+    margin-bottom: 3px;
+  }
+  .kiosk-keyboard .hg-button {
+    height: 44px;
+    font-size: 16px;
+    padding: 0 1px;
+  }
+  .kiosk-keyboard .hg-button[data-skbtn="{bksp}"],
+  .kiosk-keyboard .hg-button[data-skbtn="{enter}"],
+  .kiosk-keyboard .hg-button[data-skbtn="{shift}"],
+  .kiosk-keyboard .hg-button[data-skbtn="{lock}"] {
+    font-size: 12px;
+  }
 }
 
 .kiosk-keyboard .hg-button[data-skbtn="{enter}"]:active {

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import FlagImage from "@/components/ui/FlagImage";
 import ConversationHeaderButtons from "@/components/ui/ConversationHeaderButtons";
+import FontScaleControl from "@/components/ui/FontScaleControl";
 import KeyboardWrapper from "@/components/keyboard/KeyboardWrapper";
 
 export function generateStaticParams() {
@@ -59,6 +60,7 @@ export default async function LangLayout({
           </Link>
           <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
             <ConversationHeaderButtons />
+            <FontScaleControl />
             <div
               className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 h-9 rounded-full shrink-0"
               style={{ background: "var(--gh-bone)" }}
