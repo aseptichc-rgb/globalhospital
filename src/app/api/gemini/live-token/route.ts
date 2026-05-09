@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Modality } from "@google/genai";
 import { buildLiveInterpretationSystem } from "@/lib/gemini-prompts";
 import { requireApproved } from "@/lib/auth-server";
 import { logUsage } from "@/lib/usage";
@@ -26,13 +26,30 @@ export async function POST(request: NextRequest) {
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
+    const systemInstruction = buildLiveInterpretationSystem(
+      sourceLang,
+      targetLang
+    );
+
     const now = Date.now();
+    // Ephemeral tokens hit the BidiGenerateContentConstrained endpoint,
+    // which requires the model and Live config to be locked into the
+    // token at creation time. Without `liveConnectConstraints`, the
+    // server has nothing to bind to and closes the WS with code 1006.
     const token = await ai.authTokens.create({
       config: {
         uses: 1,
         expireTime: new Date(now + 30 * 60 * 1000).toISOString(),
         newSessionExpireTime: new Date(now + 60 * 1000).toISOString(),
         httpOptions: { apiVersion: "v1alpha" },
+        liveConnectConstraints: {
+          model: CLIENT_MODEL,
+          config: {
+            responseModalities: [Modality.TEXT],
+            systemInstruction,
+            inputAudioTranscription: {},
+          },
+        },
       },
     });
 
@@ -49,7 +66,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       token: token.name,
       model: CLIENT_MODEL,
-      systemInstruction: buildLiveInterpretationSystem(sourceLang, targetLang),
+      systemInstruction,
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
