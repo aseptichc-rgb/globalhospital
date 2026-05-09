@@ -4,11 +4,10 @@ import { buildLiveInterpretationSystem } from "@/lib/gemini-prompts";
 import { requireApproved } from "@/lib/auth-server";
 import { logUsage } from "@/lib/usage";
 
-// `gemini-live-2.5-flash-preview` is rejected on the v1alpha endpoint
-// (the one ephemeral tokens require) with "is not found for API version
-// v1main, or is not supported for bidiGenerateContent". Use the GA Live
-// model that v1alpha actually serves.
-const CLIENT_MODEL = "gemini-2.0-flash-live-001";
+// Both `gemini-live-2.5-flash-preview` and `gemini-2.0-flash-live-001`
+// are rejected on the v1alpha endpoint that ephemeral tokens require —
+// the server only serves the native-audio dialog model there.
+const CLIENT_MODEL = "gemini-2.5-flash-preview-native-audio-dialog";
 
 export async function POST(request: NextRequest) {
   try {
