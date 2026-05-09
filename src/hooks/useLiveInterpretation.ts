@@ -211,7 +211,14 @@ export function useLiveInterpretation(
     source.connect(workletNode);
     // Worklet output is not connected to destination — we only use postMessage.
 
-    const ai = new GoogleGenAI({ apiKey: tokenData.token });
+    // Ephemeral tokens are only supported on v1alpha. The SDK defaults to
+    // v1beta, which silently produces a 1006 abnormal-close on the
+    // BidiGenerateContent handshake. Match the API version the token was
+    // minted for.
+    const ai = new GoogleGenAI({
+      apiKey: tokenData.token,
+      httpOptions: { apiVersion: "v1alpha" },
+    });
 
     let session: Session;
     try {
