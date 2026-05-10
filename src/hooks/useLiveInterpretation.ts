@@ -225,9 +225,13 @@ export function useLiveInterpretation(
       session = await ai.live.connect({
         model: tokenData.model,
         config: {
-          responseModalities: [Modality.TEXT],
+          // Must match the token's liveConnectConstraints.config — the
+          // model (gemini-3.1-flash-live-preview) only supports AUDIO
+          // response modality and rejects TEXT with code 1011.
+          responseModalities: [Modality.AUDIO],
           systemInstruction: tokenData.systemInstruction,
           inputAudioTranscription: {},
+          outputAudioTranscription: {},
         },
         callbacks: {
           onopen: () => {},
@@ -242,6 +246,12 @@ export function useLiveInterpretation(
               turnOutputRef.current += content.outputTranscription.text;
               setPartialOutput(turnOutputRef.current);
             }
+            // The model also streams its translation as audio inline-data
+            // parts (gemini-3.1-flash-live-preview is audio-out-only).
+            // We INTENTIONALLY ignore those: this app shows the translation
+            // as text only, and surfacing the model's synthesised speech
+            // — particularly the Korean audio it produces when the patient
+            // speaks — would be unwanted. Pull text parts only.
             if (content.modelTurn?.parts) {
               for (const part of content.modelTurn.parts) {
                 if (part.text) {
