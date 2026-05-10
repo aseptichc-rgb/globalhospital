@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI, Modality } from "@google/genai";
-import { buildLiveInterpretationSystem } from "@/lib/gemini-prompts";
+import {
+  buildBidirectionalLiveSystem,
+  buildLiveInterpretationSystem,
+} from "@/lib/gemini-prompts";
 import { requireApproved } from "@/lib/auth-server";
 import { logUsage } from "@/lib/usage";
 
@@ -16,21 +19,29 @@ export async function POST(request: NextRequest) {
     const auth = await requireApproved(request);
     if (auth instanceof NextResponse) return auth;
 
-    const { sourceLang, targetLang } = await request.json();
+    const { sourceLang, targetLang, bidirectional, patientLang } =
+      await request.json();
 
-    if (!sourceLang || !targetLang) {
-      return NextResponse.json(
-        { error: "Missing sourceLang or targetLang" },
-        { status: 400 }
-      );
+    let systemInstruction: string;
+    if (bidirectional) {
+      if (!patientLang) {
+        return NextResponse.json(
+          { error: "Missing patientLang for bidirectional mode" },
+          { status: 400 }
+        );
+      }
+      systemInstruction = buildBidirectionalLiveSystem(patientLang);
+    } else {
+      if (!sourceLang || !targetLang) {
+        return NextResponse.json(
+          { error: "Missing sourceLang or targetLang" },
+          { status: 400 }
+        );
+      }
+      systemInstruction = buildLiveInterpretationSystem(sourceLang, targetLang);
     }
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-
-    const systemInstruction = buildLiveInterpretationSystem(
-      sourceLang,
-      targetLang
-    );
 
     const now = Date.now();
     // Ephemeral tokens hit the BidiGenerateContentConstrained endpoint,

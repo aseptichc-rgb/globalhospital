@@ -100,15 +100,13 @@ export default function InterpretationChat({
   // Patient side (selected language)
   const patientSTT = useSpeechRecognition(language.bcp47);
 
-  // Live-mode simultaneous interpreter (one hook per direction; only one is
-  // connected at a time via start()/stop()).
-  const doctorLive = useLiveInterpretation({
-    sourceLang: "Korean",
-    targetLang: language.geminiLangName,
-  });
-  const patientLive = useLiveInterpretation({
-    sourceLang: language.geminiLangName,
-    targetLang: "Korean",
+  // Live-mode simultaneous interpreter: a single bidirectional session that
+  // listens to both Korean (doctor) and the patient's language and routes
+  // each utterance to the opposite language. Speaker side is decided from
+  // the input transcript (Hangul → doctor, otherwise → patient).
+  const live = useLiveInterpretation({
+    mode: "bidirectional",
+    patientLang: language.geminiLangName,
   });
 
   // Autocomplete for both sides — disabled while translating or in live mode
@@ -262,21 +260,13 @@ export default function InterpretationChat({
   const startSide = useCallback(
     (side: "doctor" | "patient") => {
       if (liveModeRef.current) {
-        // Live mode: use streaming Gemini Live sessions.
-        if (side === "doctor") {
-          patientLive.stop();
-          pendingSideRef.current = "doctor";
-          setActiveSide("doctor");
-          setTimeout(() => {
-            if (pendingSideRef.current === "doctor") doctorLive.start();
-          }, 150);
-        } else {
-          doctorLive.stop();
-          pendingSideRef.current = "patient";
-          setActiveSide("patient");
-          setTimeout(() => {
-            if (pendingSideRef.current === "patient") patientLive.start();
-          }, 150);
+        // Bidirectional Live: a single session handles both sides, so we
+        // just make sure it's running. activeSide reflects the *currently
+        // detected* speaker for UI alignment and is set by the partial-
+        // detection effect once the user starts speaking.
+        pendingSideRef.current = null;
+        if (!live.isListening && !live.isConnecting) {
+          live.start();
         }
         return;
       }
@@ -300,22 +290,22 @@ export default function InterpretationChat({
         }, 150);
       }
     },
-    [doctorSTT, patientSTT, doctorLive, patientLive]
+    [doctorSTT, patientSTT, live]
   );
 
   useEffect(() => {
     startSideRef.current = startSide;
   }, [startSide]);
 
-  // React to finalized live segments from either side.
+  // React to finalized live segments. In bidirectional mode the speaker is
+  // decided inside the hook from the input transcript (Hangul → doctor,
+  // otherwise → patient). The session keeps running across turns, so we
+  // never re-arm a side here.
   const handleLiveSegment = useCallback(
     async (speaker: "doctor" | "patient", input: string, output: string) => {
       const originalText = input.trim();
       const translatedText = output.trim();
-      if (!originalText && !translatedText) {
-        if (liveModeRef.current) startSideRef.current?.(speaker);
-        return;
-      }
+      if (!originalText && !translatedText) return;
 
       const message: ChatMessage = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -330,38 +320,36 @@ export default function InterpretationChat({
 
       if (speaker === "doctor" && translatedText) {
         // Mute the active mic during TTS to avoid echo capture.
-        doctorLive.muteMic(true);
-        patientLive.muteMic(true);
+        live.muteMic(true);
         await doctorTTS.speak(translatedText);
         await new Promise((r) => setTimeout(r, 600));
-        doctorLive.muteMic(false);
-        patientLive.muteMic(false);
-      }
-
-      if (liveModeRef.current) {
-        const next = speaker === "doctor" ? "patient" : "doctor";
-        startSideRef.current?.(next);
+        live.muteMic(false);
       }
     },
-    [addChatMessage, doctorTTS, doctorLive, patientLive, language.bcp47]
+    [addChatMessage, doctorTTS, live, language.bcp47]
   );
 
   useEffect(() => {
-    if (doctorLive.lastSegment) {
-      const seg = doctorLive.lastSegment;
-      handleLiveSegment("doctor", seg.inputTranscript, seg.outputTranslation);
+    if (live.lastSegment) {
+      const seg = live.lastSegment;
+      // Bidirectional mode always sets detectedSpeaker; fall back to "doctor"
+      // only as a safety net.
+      const speaker = seg.detectedSpeaker ?? "doctor";
+      handleLiveSegment(speaker, seg.inputTranscript, seg.outputTranslation);
     }
-    // Only react when the segment id changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doctorLive.lastSegment?.id]);
+  }, [live.lastSegment?.id]);
 
+  // While Live is streaming, mirror the partial speaker detection into
+  // activeSide so the UI bubble aligns to the right side.
   useEffect(() => {
-    if (patientLive.lastSegment) {
-      const seg = patientLive.lastSegment;
-      handleLiveSegment("patient", seg.inputTranscript, seg.outputTranslation);
+    if (!liveMode) return;
+    if (live.partialDetectedSpeaker) {
+      setActiveSide(live.partialDetectedSpeaker);
+    } else if (live.isListening) {
+      setActiveSide((prev) => prev ?? "doctor");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [patientLive.lastSegment?.id]);
+  }, [live.partialDetectedSpeaker, live.isListening, liveMode]);
 
   const handleDoctorMic = useCallback(() => {
     if (liveMode) {
@@ -433,13 +421,12 @@ export default function InterpretationChat({
     } else {
       doctorSTT.stopListening();
       patientSTT.stopListening();
-      doctorLive.stop();
-      patientLive.stop();
+      live.stop();
       doctorTTS.cancel();
       pendingSideRef.current = null;
       setActiveSide(null);
     }
-  }, [liveMode, doctorSTT, patientSTT, doctorLive, patientLive, doctorTTS, startSide]);
+  }, [liveMode, doctorSTT, patientSTT, live, doctorTTS, startSide]);
 
   // Reset everything for a new patient without leaving the chat screen:
   // wipe persisted chatMessages, stop any in-flight audio/STT/live sessions,
@@ -459,8 +446,7 @@ export default function InterpretationChat({
     patientSTT.stopListening();
     doctorSTT.resetTranscript();
     patientSTT.resetTranscript();
-    doctorLive.stop();
-    patientLive.stop();
+    live.stop();
     doctorTTS.cancel();
 
     // Reset local UI state
@@ -477,8 +463,7 @@ export default function InterpretationChat({
   }, [
     doctorSTT,
     patientSTT,
-    doctorLive,
-    patientLive,
+    live,
     doctorTTS,
     clearChatMessages,
   ]);
@@ -741,9 +726,7 @@ export default function InterpretationChat({
                     className="text-base sm:text-xl font-semibold mt-2 leading-relaxed"
                     style={{ color: "var(--gh-ink)" }}
                   >
-                    {activeSide === "doctor"
-                      ? doctorLive.partialInput
-                      : patientLive.partialInput}
+                    {live.partialInput}
                   </p>
                   <p
                     className="text-base sm:text-xl font-semibold mt-2 pt-2 leading-relaxed"
@@ -753,9 +736,7 @@ export default function InterpretationChat({
                     }}
                   >
                     →{" "}
-                    {activeSide === "doctor"
-                      ? doctorLive.partialOutput
-                      : patientLive.partialOutput}
+                    {live.partialOutput}
                   </p>
                 </>
               ) : (
@@ -785,7 +766,7 @@ export default function InterpretationChat({
       </div>
 
       {/* Error Display */}
-      {(doctorSTT.error || patientSTT.error || doctorLive.error || patientLive.error) && (
+      {(doctorSTT.error || patientSTT.error || live.error) && (
         <div
           className="text-sm px-3 py-2 mx-4"
           style={{
@@ -796,7 +777,7 @@ export default function InterpretationChat({
           }}
           role="alert"
         >
-          ⚠ {doctorSTT.error || patientSTT.error || doctorLive.error || patientLive.error}
+          ⚠ {doctorSTT.error || patientSTT.error || live.error}
         </div>
       )}
 

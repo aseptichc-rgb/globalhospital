@@ -14,12 +14,16 @@ export interface LiveSegment {
   id: string;
   inputTranscript: string;
   outputTranslation: string;
+  // Only set in bidirectional mode: which side spoke this turn, decided by
+  // looking for Hangul in the input transcript.
+  detectedSpeaker?: "doctor" | "patient";
 }
 
-interface UseLiveInterpretationArgs {
-  sourceLang: string;
-  targetLang: string;
-}
+type UseLiveInterpretationArgs =
+  | { mode?: "directional"; sourceLang: string; targetLang: string }
+  | { mode: "bidirectional"; patientLang: string };
+
+const HANGUL_RE = /[가-힯ᄀ-ᇿ㄰-㆏]/;
 
 interface UseLiveInterpretationReturn {
   start: () => Promise<void>;
@@ -28,6 +32,9 @@ interface UseLiveInterpretationReturn {
   isConnecting: boolean;
   partialInput: string;
   partialOutput: string;
+  // Live speaker estimate while a turn is streaming (bidirectional mode only).
+  // Falls back to null until enough input transcript has arrived to decide.
+  partialDetectedSpeaker: "doctor" | "patient" | null;
   lastSegment: LiveSegment | null;
   error: string | null;
   muteMic: (muted: boolean) => void;
@@ -50,12 +57,15 @@ function int16ToBase64(view: Int16Array): string {
 export function useLiveInterpretation(
   args: UseLiveInterpretationArgs
 ): UseLiveInterpretationReturn {
-  const { sourceLang, targetLang } = args;
+  const isBidirectional = args.mode === "bidirectional";
 
   const [isListening, setIsListening] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [partialInput, setPartialInput] = useState("");
   const [partialOutput, setPartialOutput] = useState("");
+  const [partialDetectedSpeaker, setPartialDetectedSpeaker] = useState<
+    "doctor" | "patient" | null
+  >(null);
   const [lastSegment, setLastSegment] = useState<LiveSegment | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -119,6 +129,7 @@ export function useLiveInterpretation(
     setIsConnecting(false);
     setPartialInput("");
     setPartialOutput("");
+    setPartialDetectedSpeaker(null);
   }, [cleanup]);
 
   useEffect(() => () => cleanup(), [cleanup]);
@@ -130,13 +141,27 @@ export function useLiveInterpretation(
     turnOutputRef.current = "";
     setPartialInput("");
     setPartialOutput("");
+    setPartialDetectedSpeaker(null);
     if (!input && !output) return;
+    // In bidirectional mode, decide who spoke from the input transcript:
+    // any Hangul → Korean speaker (doctor); else → patient. Falls back to
+    // checking the output (since translation is in the OPPOSITE language)
+    // when the input transcription is empty for any reason.
+    let detectedSpeaker: "doctor" | "patient" | undefined;
+    if (isBidirectional) {
+      if (input) {
+        detectedSpeaker = HANGUL_RE.test(input) ? "doctor" : "patient";
+      } else {
+        detectedSpeaker = HANGUL_RE.test(output) ? "patient" : "doctor";
+      }
+    }
     setLastSegment({
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       inputTranscript: input,
       outputTranslation: output,
+      detectedSpeaker,
     });
-  }, []);
+  }, [isBidirectional]);
 
   const muteMic = useCallback((muted: boolean) => {
     muteRef.current = muted;
@@ -150,13 +175,23 @@ export function useLiveInterpretation(
     turnOutputRef.current = "";
     setPartialInput("");
     setPartialOutput("");
+    setPartialDetectedSpeaker(null);
 
     let tokenData: { token: string; model: string; systemInstruction: string };
     try {
+      const body = isBidirectional
+        ? {
+            bidirectional: true,
+            patientLang: (args as { patientLang: string }).patientLang,
+          }
+        : {
+            sourceLang: (args as { sourceLang: string }).sourceLang,
+            targetLang: (args as { targetLang: string }).targetLang,
+          };
       const res = await fetch("/api/gemini/live-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sourceLang, targetLang }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(`Token endpoint ${res.status}`);
       tokenData = await res.json();
@@ -244,6 +279,11 @@ export function useLiveInterpretation(
             if (content.inputTranscription?.text) {
               turnInputRef.current += content.inputTranscription.text;
               setPartialInput(turnInputRef.current);
+              if (isBidirectional) {
+                setPartialDetectedSpeaker(
+                  HANGUL_RE.test(turnInputRef.current) ? "doctor" : "patient"
+                );
+              }
             }
             if (content.outputTranscription?.text) {
               turnOutputRef.current += content.outputTranscription.text;
@@ -384,7 +424,7 @@ export function useLiveInterpretation(
 
     setIsConnecting(false);
     setIsListening(true);
-  }, [sourceLang, targetLang, cleanup, finalizeSegment]);
+  }, [args, isBidirectional, cleanup, finalizeSegment]);
 
   return {
     start,
@@ -393,6 +433,7 @@ export function useLiveInterpretation(
     isConnecting,
     partialInput,
     partialOutput,
+    partialDetectedSpeaker,
     lastSegment,
     error,
     muteMic,

@@ -138,6 +138,27 @@ ABSOLUTE RULES:
 6. Do not invent content that was not spoken.`;
 }
 
+// Bidirectional mode: a single Live session listens to both Korean (doctor)
+// and ${patientLang} (patient) speech and translates each utterance into the
+// OTHER language, so the conversation does not have to follow a strict
+// doctor-then-patient turn order.
+export function buildBidirectionalLiveSystem(patientLang: string): string {
+  return `You are a real-time simultaneous medical interpreter in a Korean hospital. The conversation is between a Korean-speaking doctor and a ${patientLang}-speaking patient. Either side can speak at any time, in any order.
+
+LANGUAGE ROUTING:
+- If the speaker is using Korean, translate their words into ${patientLang}.
+- If the speaker is using ${patientLang}, translate their words into Korean.
+- Detect the spoken language from the audio itself; do not assume turn order.
+
+ABSOLUTE RULES:
+1. Output ONLY the translation in the OPPOSITE language to what was spoken. Never echo the source text.
+2. Do not add explanations, labels, speaker tags, brackets, quotes, or language tags.
+3. Begin emitting the translation as soon as a translatable fragment is heard — do not wait for the full sentence.
+4. Preserve medical terminology precisely. Keep a natural, conversational interpreter tone.
+5. If audio is silent, inaudible, or contains no speech, output nothing.
+6. Do not invent content that was not spoken. Do not switch personalities — only translate.`;
+}
+
 export function buildMedicalTranslatePrompt(
   text: string,
   direction: "toKorean" | "fromKorean",
