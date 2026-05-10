@@ -48,11 +48,14 @@ export default function InterpretationChat({
   const [activeSide, setActiveSide] = useState<"doctor" | "patient" | null>(null);
   const [translating, setTranslating] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
-  const [liveMode, setLiveMode] = useState(false);
+  // Default to Live (streaming, word-level) mode — feels much more responsive
+  // than the sentence-batched STT path. Toggle off if the user wants the old
+  // press-and-hold behavior.
+  const [liveMode, setLiveMode] = useState(true);
   const [doctorText, setDoctorText] = useState("");
   const [patientText, setPatientText] = useState("");
   const { keyboardHeight } = useKeyboardContext();
-  const liveModeRef = useRef(false);
+  const liveModeRef = useRef(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const prevMessageCountRef = useRef(chatMessages.length);
 
@@ -734,14 +737,20 @@ export default function InterpretationChat({
               </span>
               {liveMode ? (
                 <>
-                  <p className="text-base mt-2" style={{ color: "var(--gh-steel)" }}>
+                  <p
+                    className="text-base sm:text-xl font-semibold mt-2 leading-relaxed"
+                    style={{ color: "var(--gh-ink)" }}
+                  >
                     {activeSide === "doctor"
                       ? doctorLive.partialInput
                       : patientLive.partialInput}
                   </p>
                   <p
-                    className="text-lg font-semibold mt-1"
-                    style={{ color: "var(--gh-ink)" }}
+                    className="text-base sm:text-xl font-semibold mt-2 pt-2 leading-relaxed"
+                    style={{
+                      color: "var(--gh-blue-deep)",
+                      borderTop: "1px solid rgba(14, 26, 43, 0.12)",
+                    }}
                   >
                     →{" "}
                     {activeSide === "doctor"

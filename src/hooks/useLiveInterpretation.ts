@@ -4,8 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { GoogleGenAI, Modality, type Session } from "@google/genai";
 
 const SILENCE_THRESHOLD = 20;
-const SILENCE_DURATION_MS = 1800;
-const MIN_SPEECH_MS = 500;
+// Aggressive end-of-utterance: a short pause (~0.8s) closes the turn so chat
+// bubbles commit quickly. Trade-off: a long thinking pause mid-sentence can
+// split one utterance into two segments.
+const SILENCE_DURATION_MS = 800;
+const MIN_SPEECH_MS = 300;
 
 export interface LiveSegment {
   id: string;
