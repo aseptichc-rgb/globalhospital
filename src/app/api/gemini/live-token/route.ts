@@ -46,9 +46,16 @@ export async function POST(request: NextRequest) {
         liveConnectConstraints: {
           model: CLIENT_MODEL,
           config: {
-            responseModalities: [Modality.TEXT],
+            // gemini-3.1-flash-live-preview is an audio-audio model: it
+            // closes with code 1011 if you ask for `[Modality.TEXT]`.
+            // Take its audio output (we ignore the audio stream itself
+            // on the client) and turn on outputAudioTranscription so the
+            // model also emits a text transcription of what it's saying,
+            // which is what we render word-by-word in the live bubble.
+            responseModalities: [Modality.AUDIO],
             systemInstruction,
             inputAudioTranscription: {},
+            outputAudioTranscription: {},
           },
         },
       },
