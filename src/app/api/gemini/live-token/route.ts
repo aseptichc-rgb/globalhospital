@@ -4,10 +4,12 @@ import { buildLiveInterpretationSystem } from "@/lib/gemini-prompts";
 import { requireApproved } from "@/lib/auth-server";
 import { logUsage } from "@/lib/usage";
 
-// Both `gemini-live-2.5-flash-preview` and `gemini-2.0-flash-live-001`
-// are rejected on the v1alpha endpoint that ephemeral tokens require —
-// the server only serves the native-audio dialog model there.
-const CLIENT_MODEL = "gemini-2.5-flash-preview-native-audio-dialog";
+// v1alpha + ephemeral tokens only serve the model Google's official
+// docs use in their ephemeral-token examples. The 2.0/2.5 Live preview
+// model IDs we tried previously all return 1008 ("not found for API
+// version v1main, or is not supported for bidiGenerateContent") on this
+// endpoint. See https://ai.google.dev/gemini-api/docs/ephemeral-tokens.
+const CLIENT_MODEL = "gemini-3.1-flash-live-preview";
 
 export async function POST(request: NextRequest) {
   try {
