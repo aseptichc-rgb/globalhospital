@@ -57,6 +57,7 @@ export default function RootLayout({
           <AuthGate>{children}</AuthGate>
         </AuthProvider>
         <ServiceWorkerRegister />
+      <footer style={{ padding: 16, textAlign: "center", fontSize: 12 }}><a href="/membership">통합 이용권 · US$19.90 평생 · 판매 준비 중</a></footer>
       </body>
     </html>
   );
